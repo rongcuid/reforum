@@ -1,0 +1,24 @@
+= Reforum
+
+== Roadmap
+
+* [ ] Version 1.0
+** [ ] Ory Kratos setup
+** [ ] Login/logout and sessions
+** [ ] Role based authorization
+** [ ] CRUD
+* [ ] Version 2.0
+** [ ] HTML templates
+** [ ] I18N
+
+== User Story
+
+=== Authentication
+
+=== Authorization
+
+=== Regular User
+
+=== Moderator
+
+=== Administrator
