@@ -1,17 +1,36 @@
 = Reforum
 
+== Goals
+
+* Only one program needed (apart from Kratos), but can run multiple servers on same DB
+* Kratos serves multiple websites with unified account
+* Sea-query + rusqlite + deadpool
+
 == Roadmap
 
 * [ ] Version 1.0
 ** [ ] Ory Kratos setup
-** [ ] Login/logout and sessions
+** [ ] Login/logout/sessions/registration
 ** [ ] Role based authorization
 ** [ ] CRUD
-* [ ] Version 2.0
+* [ ] Version 1.1
 ** [ ] HTML templates
 ** [ ] I18N
+** [ ] Front page
+** [ ] Pinned topics
+* [ ] Version 1.2
+** [ ] Finer-grained authorization
+** [ ] Tags
+** [ ] Search
+** [ ] HTMX flow?
+* [ ] Version 1.3
+** [ ] Finer-grained moderation
+* [ ] Version 2.0
+** [ ] Asciidoc
 
 == User Story
+
+=== Basic Interactions
 
 === Authentication
 

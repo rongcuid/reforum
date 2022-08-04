@@ -69,9 +69,12 @@ ciphers:
   algorithm: xchacha20-poly1305
 
 hashers:
-  algorithm: bcrypt
-  bcrypt:
-    cost: 8
+  argon2:
+    parallelism: 1
+    memory: 128MB
+    iterations: 3
+    salt_length: 16
+    key_length: 32
 
 identity:
   default_schema_id: default
