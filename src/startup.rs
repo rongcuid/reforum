@@ -1,14 +1,19 @@
 use axum::handler::Handler;
-
+use axum::routing::get;
 use axum::{Extension, Router};
 
+use migration::{Migrator, MigratorTrait};
+
+use sea_orm::ConnectOptions;
 use secrecy::Secret;
 use tower::builder::ServiceBuilder;
 use tower_http::compression::CompressionLayer;
+use tracing::log::LevelFilter;
 
 use super::routes::fallback::handler_404;
 use crate::configuration::get_configuration;
 
+use crate::routes::index;
 use crate::telemetry::{init_telemetry, setup_telemetry};
 
 #[derive(Clone)]
@@ -26,8 +31,18 @@ pub async fn run() {
         .parse()
         .unwrap();
 
+    let mut connection_options = ConnectOptions::from(&configuration.database.connection);
+    connection_options.sqlx_logging_level(LevelFilter::Debug);
+
+    let db = sea_orm::Database::connect(connection_options)
+        .await
+        .unwrap();
+    Migrator::up(&db, None).await.unwrap();
+
     // build our application with a route
-    let app = Router::new().fallback(handler_404.into_service());
+    let app = Router::new()
+        .route("/", get(index::handler))
+        .fallback(handler_404.into_service());
 
     let app = app.layer(
         ServiceBuilder::new()

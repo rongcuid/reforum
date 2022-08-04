@@ -12,6 +12,10 @@ name = "reforum"
 
 
 [dependencies]
+eyre = "0.6"
+color-eyre = "0.6"
+thiserror = "1"
+
 entity = { path = "entity" }
 migration = { path = "migration" }
 
@@ -22,6 +26,7 @@ config = "0.13"
 
 axum = "0.5"
 axum-extra = { version = "0.3.6", features = [ "cookie-signed" ] }
+maud = { version = "0.23", features = [ "axum" ] }
 
 hyper = "0.14"
 tokio = { version = "1", features = ["full"] }
@@ -48,3 +53,15 @@ features = [
     "sqlx-sqlite",
     "runtime-tokio-rustls",
 ]
+
+# [dependencies.sqlx]
+# version = "0.6"
+# features = [
+#     "runtime-tokio-rustls",
+#     "macros",
+#     "sqlite",
+#     "uuid",
+#     "time",
+#     "migrate",
+#     "offline",
+# ]

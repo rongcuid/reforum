@@ -4,12 +4,14 @@
 
 * Only one program needed (apart from Kratos), but can run multiple servers on same DB
 * Kratos serves multiple websites with unified account
-* Sea-query + rusqlite + deadpool
+* Sea-ORM
+* Data consistency in DB
+* Sparse queries in DB
 
 == Roadmap
 
 * [ ] Version 1.0
-** [ ] Ory Kratos setup
+** [ ] Standalone authentication
 ** [ ] Login/logout/sessions/registration
 ** [ ] Role based authorization
 ** [ ] CRUD
@@ -26,6 +28,7 @@
 * [ ] Version 1.3
 ** [ ] Finer-grained moderation
 * [ ] Version 2.0
+** [ ] ORY Kratos
 ** [ ] Asciidoc
 
 == User Story
