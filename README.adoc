@@ -54,6 +54,12 @@
 
 === Moderation
 
+=== Administration
+
+* [ ] Good tracing
+** [x] Log all requests and response codes
+** [x] Latency traces
+
 == Experience Report
 
 === Sea-ORM

@@ -13,7 +13,7 @@ pub fn init_telemetry() {
         .with(tracing_subscriber::EnvFilter::new(
             std::env::var("RUST_LOG").unwrap_or_else(|_| "info".into()),
         ))
-        .with(tracing_subscriber::fmt::layer().with_span_events(FmtSpan::CLOSE))
+        .with(tracing_subscriber::fmt::layer().with_span_events(FmtSpan::NEW | FmtSpan::CLOSE))
         .init();
 }
 
@@ -21,11 +21,11 @@ pub fn setup_telemetry(app: Router) -> Router {
     app.layer(
         TraceLayer::new_for_http()
             .on_request(
-                DefaultOnRequest::new(), // .level(Level::INFO)
+                DefaultOnRequest::new().level(Level::INFO)
             )
             .on_response(
                 DefaultOnResponse::new()
-                    // .level(Level::INFO)
+                    .level(Level::INFO)
                     .latency_unit(LatencyUnit::Micros),
             )
             .make_span_with(|request: &Request<Body>| {
