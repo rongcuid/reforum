@@ -55,7 +55,6 @@ where
             .map_or(Ok(None), |r| r.map(Some))
             .unwrap_or(None);
         Ok(Self(session_data))
-        // Ok(Self(None))
     }
 }
 

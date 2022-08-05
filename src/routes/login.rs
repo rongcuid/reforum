@@ -1,4 +1,8 @@
-use axum::{http::StatusCode, response::IntoResponse, Extension};
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Redirect},
+    Extension,
+};
 use axum_extra::extract::SignedCookieJar;
 use cookie::{Cookie, SameSite};
 use deadpool_sqlite::{Pool, Status};
@@ -10,13 +14,11 @@ use nanoid::nanoid;
 
 use crate::{core::session::new_session, startup::SessionCookieName};
 
-// #[instrument(skip_all)]
-pub async fn handler(
+async fn new_session_to_cookie(
+    db: &Pool,
+    session_name: &str,
     jar: SignedCookieJar,
-    Extension(session_name): Extension<SessionCookieName>,
-    Extension(db): Extension<Pool>,
-) -> Result<(SignedCookieJar, String), (StatusCode, String)> {
-    let id = nanoid!();
+) -> Result<SignedCookieJar, (StatusCode, String)> {
     let session = new_session(
         &db.get().await.unwrap(),
         1,
@@ -26,7 +28,7 @@ pub async fn handler(
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let jar = if let Some(s) = serde_json::to_string(&session.get()).ok() {
         jar.add(
-            Cookie::build(session_name.0.clone(), s)
+            Cookie::build(session_name.to_owned(), s)
                 .same_site(SameSite::Strict)
                 .secure(true)
                 .http_only(true)
@@ -35,8 +37,15 @@ pub async fn handler(
     } else {
         jar
     };
-    Ok((
-        jar,
-        format!("Stub implementation, inserting random session ID: {}", id),
-    ))
+    Ok(jar)
+}
+
+#[instrument(skip_all)]
+pub async fn handler(
+    jar: SignedCookieJar,
+    Extension(session_name): Extension<SessionCookieName>,
+    Extension(db): Extension<Pool>,
+) -> Result<(SignedCookieJar, Redirect), (StatusCode, String)> {
+    let jar = new_session_to_cookie(&db, &session_name.0, jar).await?;
+    Ok((jar, Redirect::to("/")))
 }
