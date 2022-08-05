@@ -11,7 +11,7 @@ use nanoid::nanoid;
 use secrecy::{Secret, SecretString};
 use tracing::instrument;
 
-use crate::core::session::{ Session};
+use crate::core::session::Session;
 
 #[instrument(skip_all)]
 pub async fn handler(
