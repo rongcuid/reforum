@@ -92,9 +92,31 @@ pub async fn remove_session(db: &Connection, session: &Session) -> Result<()> {
             conn.execute(
                 r#"DELETE FROM user_sessions WHERE id = ? AND session_user_id = ?"#,
                 (hash, s.user_id),
-            ).unwrap();
+            )
+            .unwrap();
         })
-        .await.unwrap();
+        .await
+        .unwrap();
     }
     Ok(())
+}
+
+#[instrument(skip_all)]
+pub async fn verify_session(db: &Connection, session: &Session) -> Result<bool> {
+    if let Some(s) = &session.0 {
+        let hash = Sha256::digest(s.session_id.as_bytes()).as_slice().to_vec();
+
+        let s = s.clone();
+        db.interact(move |conn| {
+            Ok(conn.query_row(
+                r#"SELECT 1 FROM user_sessions WHERE id = ? AND session_user_id = ?"#,
+                (hash, s.user_id),
+                |_| Ok(true),
+            )?)
+        })
+        .await
+        .unwrap()
+    } else {
+        Ok(false)
+    }
 }

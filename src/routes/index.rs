@@ -11,7 +11,7 @@ use nanoid::nanoid;
 use secrecy::{Secret, SecretString};
 use tracing::instrument;
 
-use crate::core::session::Session;
+use crate::core::session::{verify_session, Session};
 
 #[instrument(skip_all)]
 pub async fn handler(
@@ -19,22 +19,26 @@ pub async fn handler(
     Extension(db): Extension<Pool>,
 ) -> Result<Html<String>, StatusCode> {
     if let Some(data) = session.get() {
-        Ok(Html(
-            html! {
-                h1{"Index of Reforum"}
-                p{"Hello, "(format!("user {}", data.user_id))"!"}
-                a href="/logout" { "Logout" }
-            }
-            .0,
-        ))
-    } else {
-        Ok(Html(
-            html! {
-                h1{"Index of Reforum"}
-                p{"Hello, Anonymous!"}
-                a href="/login" { "Login" }
-            }
-            .0,
-        ))
+        if verify_session(&db.get().await.unwrap(), &session)
+            .await
+            .unwrap()
+        {
+            return Ok(Html(
+                html! {
+                    h1{"Index of Reforum"}
+                    p{"Hello, "(format!("user {}", data.user_id))"!"}
+                    a href="/logout" { "Logout" }
+                }
+                .0,
+            ));
+        }
     }
+    Ok(Html(
+        html! {
+            h1{"Index of Reforum"}
+            p{"Hello, Anonymous!"}
+            a href="/login" { "Login" }
+        }
+        .0,
+    ))
 }
