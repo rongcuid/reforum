@@ -10,7 +10,7 @@ use hyper::StatusCode;
 use secrecy::{ExposeSecret, Secret};
 use sha2::{Digest, Sha256};
 use time::{OffsetDateTime, PrimitiveDateTime};
-use tracing::instrument;
+use tracing::{error, instrument};
 
 #[derive(Debug)]
 pub struct Session(Option<SessionData>);
@@ -39,7 +39,7 @@ where
     }
 }
 
-#[instrument(skip(db))]
+#[instrument(skip(db, expires_at))]
 pub async fn insert_session(
     db: &Connection,
     user_id: i64,
@@ -50,14 +50,17 @@ pub async fn insert_session(
         .as_slice()
         .to_vec();
     let expires_at = expires_at.clone();
-    db.interact(move |conn| -> Result<(), rusqlite::Error> {
+    db.interact(move |conn| -> Result<(), Error> {
         conn.execute(
             r"INSERT INTO user_sessions (id, session_user_id, expires_at) VALUES(?, ?, ?)",
             (hash, user_id, expires_at),
         )?;
         Ok(())
     })
-    .await
-    .map_err(|e| eyre!("insert session to DB failed: {}", e))??;
+    .await.unwrap()
+    .map_err(|e| {
+        error!("{}", e);
+        eyre!(e.to_string())
+    })?;
     Ok(())
 }
