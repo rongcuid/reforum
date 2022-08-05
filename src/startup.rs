@@ -13,7 +13,7 @@ use tracing::log::LevelFilter;
 use super::routes::fallback::handler_404;
 use crate::configuration::get_configuration;
 
-use crate::routes::index;
+use crate::routes::{index, login, logout};
 use crate::telemetry::{init_telemetry, setup_telemetry};
 
 #[derive(Clone)]
@@ -39,6 +39,8 @@ pub async fn run() {
     // build our application with a route
     let app = Router::new()
         .route("/", get(index::handler))
+        .route("/login", get(login::handler))
+        .route("/logout", get(logout::handler))
         .fallback(handler_404.into_service());
 
     let app = app.layer(
