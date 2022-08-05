@@ -6,5 +6,6 @@ pub mod moderators;
 pub mod past_moderators;
 pub mod posts;
 pub mod replies;
+pub mod sessions;
 pub mod topics;
 pub mod users;

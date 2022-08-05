@@ -64,7 +64,7 @@ impl MigrationTrait for Migration {
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
-                    .to_owned(), 
+                    .to_owned(),
             )
             .await?;
         // Past Moderators
@@ -236,6 +236,30 @@ impl MigrationTrait for Migration {
                     .to_owned(),
             )
             .await?;
+        // Sessions
+        manager
+            .create_table(
+                Table::create()
+                    .table(Sessions::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(Sessions::Id)
+                            .blob(BlobSize::Tiny)
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(Sessions::UserId).integer().not_null())
+                    .col(ColumnDef::new(Sessions::ExpiresAt).date_time())
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(Sessions::Table, Sessions::UserId)
+                            .to(Users::Table, Users::Id)
+                            .on_delete(ForeignKeyAction::Cascade)
+                            .on_update(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
         match manager.get_database_backend() {
             DbBackend::Sqlite => {
                 manager
@@ -255,6 +279,9 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         // Replace the sample below with your own migration scripts
+        manager
+            .drop_table(Table::drop().table(Sessions::Table).to_owned())
+            .await?;
         manager
             .drop_table(Table::drop().table(PastModerators::Table).to_owned())
             .await?;
@@ -345,4 +372,12 @@ enum Replies {
     AuthorUserId,
     Body,
     CreatedAt,
+}
+
+#[derive(Iden)]
+enum Sessions {
+    Table,
+    Id,
+    UserId,
+    ExpiresAt,
 }
