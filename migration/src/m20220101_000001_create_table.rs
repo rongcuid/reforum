@@ -64,7 +64,7 @@ impl MigrationTrait for Migration {
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
-                    .to_owned(),
+                    .to_owned(), 
             )
             .await?;
         // Past Moderators

@@ -58,3 +58,5 @@
 === Sea-ORM
 
 * The migrations are quite unreadable
+* The manual entity generation step is suboptimal
+** I would prefer to generate migrations _from_ entities, not the other way around
