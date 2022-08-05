@@ -13,6 +13,7 @@ use secrecy::{ExposeSecret, Secret, SecretString};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use time::{OffsetDateTime, PrimitiveDateTime};
+use tokio::sync::Mutex;
 use tracing::{error, instrument};
 
 use crate::startup::SessionCookieName;
@@ -88,15 +89,15 @@ pub async fn remove_session(db: &Connection, session: &Session) -> Result<()> {
         let hash = Sha256::digest(s.session_id.as_bytes()).as_slice().to_vec();
 
         let s = s.clone();
-        db.interact(move |conn| {
+        db.interact(move |conn| -> Result<(), rusqlite::Error> {
             conn.execute(
                 r#"DELETE FROM user_sessions WHERE id = ? AND session_user_id = ?"#,
                 (hash, s.user_id),
-            )
-            .unwrap();
+            )?;
+            Ok(())
         })
         .await
-        .unwrap();
+        .unwrap()?;
     }
     Ok(())
 }
