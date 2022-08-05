@@ -2,6 +2,7 @@ use axum::handler::Handler;
 use axum::routing::get;
 use axum::{Extension, Router};
 
+use futures::executor::block_on;
 use rusqlite_migration::{Migrations, M};
 use tower::builder::ServiceBuilder;
 use tower_http::compression::CompressionLayer;
@@ -28,15 +29,14 @@ pub async fn run() {
         .down(include_str!("sql/00-create_tables.down.sql"))]);
     let cfg = deadpool_sqlite::Config::new(configuration.database.connection);
     let pool = cfg.create_pool(deadpool_sqlite::Runtime::Tokio1).unwrap();
-    pool.get()
+    block_on(pool.get()
         .await
         .unwrap()
         .interact(move |conn| {
             // conn.pragma_update(None, "journal_mode", &"WAL")
             migrations.to_latest(conn).unwrap();
-        })
-        .await
-        .unwrap();
+        })).unwrap()
+        ;
 
     // build our application with a route
     let app = Router::new()

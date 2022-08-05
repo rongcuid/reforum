@@ -34,6 +34,7 @@ tower = { version = "0.4" }
 tower-http = { version = "0.3", features = ["full"]}
 cookie = { version = "0.16", features = [ "secure" ] }
 async-trait = "0.1"
+futures = { version = "0.3", features = ["executor"] }
 
 deadpool-sqlite = { version = "0.5", features = [ "rt_tokio_1",  "serde" ] }
 rusqlite_migration = "1"

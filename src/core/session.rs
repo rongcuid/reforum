@@ -26,7 +26,7 @@ impl Session {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SessionData {
     pub user_id: i64,
     pub session_id: String,
@@ -80,4 +80,21 @@ pub async fn new_session(
         user_id,
         session_id,
     })))
+}
+
+#[instrument(skip_all)]
+pub async fn remove_session(db: &Connection, session: &Session) -> Result<()> {
+    if let Some(s) = &session.0 {
+        let hash = Sha256::digest(s.session_id.as_bytes()).as_slice().to_vec();
+
+        let s = s.clone();
+        db.interact(move |conn| {
+            conn.execute(
+                r#"DELETE FROM user_sessions WHERE id = ? AND session_user_id = ?"#,
+                (hash, s.user_id),
+            ).unwrap();
+        })
+        .await.unwrap();
+    }
+    Ok(())
 }

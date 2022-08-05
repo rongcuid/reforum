@@ -1,7 +1,34 @@
-use axum::{http::StatusCode, response::IntoResponse};
+use axum::{http::StatusCode, response::{IntoResponse, Redirect}, Extension};
+use axum_extra::extract::SignedCookieJar;
+use cookie::Cookie;
+use deadpool_sqlite::Pool;
 use tracing::instrument;
 
-#[instrument]
-pub async fn handler() -> impl IntoResponse {
-    (StatusCode::INTERNAL_SERVER_ERROR, "Not implemented")
+use crate::{core::session::{self, remove_session, Session}, startup::SessionCookieName};
+
+fn remove_session_from_cookie(
+    session_name: &str,
+    jar: SignedCookieJar,
+) -> SignedCookieJar {
+    jar.remove(Cookie::named(session_name.to_owned()))
+}
+
+#[instrument(skip_all)]
+pub async fn handler(
+    jar: SignedCookieJar,
+    Extension(pool): Extension<Pool>,
+    Extension(session_name): Extension<SessionCookieName>,
+    session: Session,
+) -> Result<(SignedCookieJar, Redirect), (StatusCode, String)> {
+    let jar = remove_session_from_cookie(&session_name.0, jar);
+    remove_session(&pool.get().await.unwrap(), &session)
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Internal Server Error".to_owned(),
+            )
+        })?;
+    
+    Ok((jar, Redirect::to("/")))
 }
