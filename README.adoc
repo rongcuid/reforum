@@ -46,6 +46,7 @@
 === Soft Deletion
 
 * [ ] Topics and posts are never deleted from database, unless their authors' accounts are wiped
+* [ ] Replies are actually deleted
 
 === Authentication
 
