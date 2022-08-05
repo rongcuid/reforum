@@ -12,7 +12,10 @@ use tracing::instrument;
 
 use nanoid::nanoid;
 
-use crate::{core::session::{new_session, Session}, startup::SessionCookieName};
+use crate::{
+    core::session::{new_session, verify_session, Session},
+    startup::SessionCookieName,
+};
 
 async fn new_session_to_cookie(
     db: &Pool,
@@ -47,8 +50,16 @@ pub async fn handler(
     Extension(session_name): Extension<SessionCookieName>,
     Extension(db): Extension<Pool>,
 ) -> impl IntoResponse {
-    if session.get().is_some() {
-        return Err((StatusCode::FORBIDDEN, "Already logged in".to_owned()))
+    if verify_session(&db.get().await.unwrap(), &session)
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Internal Server Error".to_owned(),
+            )
+        })?
+    {
+        return Err((StatusCode::FORBIDDEN, "Already logged in".to_owned()));
     }
     let jar = new_session_to_cookie(&db, &session_name.0, jar).await?;
     Ok((jar, Redirect::to("/")))
