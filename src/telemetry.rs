@@ -1,3 +1,5 @@
+use std::os::raw::c_int;
+
 use axum::{body::Body, http::Request, Router};
 use tokio::task::JoinHandle;
 use tower_http::{
@@ -7,6 +9,10 @@ use tower_http::{
 use tracing::*;
 use tracing_subscriber::{fmt::format::FmtSpan, prelude::*};
 
+fn rusqlite_log(error_code: c_int, msg: &str) {
+    tracing::error!("SQLite Error {}: {}", error_code, msg);
+}
+
 pub fn init_telemetry() {
     color_eyre::install().unwrap();
     tracing_subscriber::registry()
@@ -15,6 +21,9 @@ pub fn init_telemetry() {
         ))
         .with(tracing_subscriber::fmt::layer().with_span_events(FmtSpan::NEW | FmtSpan::CLOSE))
         .init();
+    unsafe {
+        rusqlite::trace::config_log(Some(rusqlite_log)).unwrap();
+    }
 }
 
 pub fn setup_telemetry(app: Router) -> Router {

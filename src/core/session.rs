@@ -57,10 +57,6 @@ pub async fn insert_session(
         )?;
         Ok(())
     })
-    .await.unwrap()
-    .map_err(|e| {
-        error!("{}", e);
-        eyre!(e.to_string())
-    })?;
+    .await.unwrap()?;
     Ok(())
 }
