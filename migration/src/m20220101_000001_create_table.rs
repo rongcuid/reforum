@@ -1,4 +1,7 @@
-use sea_orm_migration::prelude::*;
+use sea_orm_migration::{
+    prelude::*,
+    sea_orm::{ConnectionTrait, DbBackend, Statement},
+};
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -29,7 +32,69 @@ impl MigrationTrait for Migration {
                             .default("CURRENT_TIMESTAMP"),
                     )
                     .col(ColumnDef::new(Users::UpdatedAt).date_time())
-                    .col(ColumnDef::new(Users::DeletedAt).date_time())
+                    .col(ColumnDef::new(Users::LastSeenAt).date_time())
+                    .col(ColumnDef::new(Users::LastPostAt).date_time())
+                    .col(ColumnDef::new(Users::MutedUntil).date_time())
+                    .col(ColumnDef::new(Users::BannedAt).date_time())
+                    .to_owned(),
+            )
+            .await?;
+        // Moderators
+        manager
+            .create_table(
+                Table::create()
+                    .table(Moderators::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(Moderators::UserId)
+                            .integer()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(Moderators::AssignedAt)
+                            .date_time()
+                            .not_null()
+                            .default("CURRENT_TIMESTAMP"),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(Moderators::Table, Moderators::UserId)
+                            .to(Users::Table, Users::Id)
+                            .on_delete(ForeignKeyAction::Cascade)
+                            .on_update(ForeignKeyAction::Cascade),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+        // Past Moderators
+        manager
+            .create_table(
+                Table::create()
+                    .table(PastModerators::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(PastModerators::Id)
+                            .integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(ColumnDef::new(PastModerators::UserId).integer().not_null())
+                    .col(
+                        ColumnDef::new(PastModerators::UnassignedAt)
+                            .date_time()
+                            .not_null()
+                            .default("CURRENT_TIMESTAMP"),
+                    )
+                    .col(ColumnDef::new(PastModerators::Reason).text().not_null())
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from(PastModerators::Table, PastModerators::UserId)
+                            .to(Users::Table, Users::Id)
+                            // These logs are NEVER deleted!
+                            .on_update(ForeignKeyAction::Cascade),
+                    )
                     .to_owned(),
             )
             .await?;
@@ -78,7 +143,7 @@ impl MigrationTrait for Migration {
                         ForeignKey::create()
                             .from(Topics::Table, Topics::AuthorUserId)
                             .to(Users::Table, Users::Id)
-                            .on_delete(ForeignKeyAction::Restrict)
+                            .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
@@ -119,14 +184,14 @@ impl MigrationTrait for Migration {
                         ForeignKey::create()
                             .from(Posts::Table, Posts::AuthorUserId)
                             .to(Users::Table, Users::Id)
-                            .on_delete(ForeignKeyAction::Restrict)
+                            .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
                     .foreign_key(
                         ForeignKey::create()
                             .from(Posts::Table, Posts::TopicId)
                             .to(Topics::Table, Topics::Id)
-                            .on_delete(ForeignKeyAction::Restrict)
+                            .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
@@ -158,24 +223,44 @@ impl MigrationTrait for Migration {
                         ForeignKey::create()
                             .from(Replies::Table, Replies::AuthorUserId)
                             .to(Users::Table, Users::Id)
-                            .on_delete(ForeignKeyAction::Restrict)
+                            .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
                     .foreign_key(
                         ForeignKey::create()
                             .from(Replies::Table, Replies::PostId)
                             .to(Posts::Table, Posts::Id)
-                            .on_delete(ForeignKeyAction::Restrict)
+                            .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
             )
             .await?;
+        match manager.get_database_backend() {
+            DbBackend::Sqlite => {
+                manager
+                    .get_connection()
+                    .execute(Statement::from_string(
+                        DbBackend::Sqlite,
+                        include_str!("sqlite_init.sql").to_owned(),
+                    ))
+                    .await?;
+            }
+            _ => {
+                Err(DbErr::Migration("Unsupported DB".to_owned()))?;
+            }
+        }
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         // Replace the sample below with your own migration scripts
+        manager
+            .drop_table(Table::drop().table(PastModerators::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(Moderators::Table).to_owned())
+            .await?;
         manager
             .drop_table(Table::drop().table(Replies::Table).to_owned())
             .await?;
@@ -202,13 +287,26 @@ enum Users {
     Signature,
     CreatedAt,
     UpdatedAt,
-    DeletedAt,
+    LastSeenAt,
+    LastPostAt,
+    MutedUntil,
+    BannedAt,
 }
 
 #[derive(Iden)]
 enum Moderators {
+    Table,
     UserId,
     AssignedAt,
+}
+
+#[derive(Iden)]
+enum PastModerators {
+    Table,
+    Id,
+    UserId,
+    UnassignedAt,
+    Reason,
 }
 
 #[derive(Iden)]

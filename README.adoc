@@ -35,12 +35,26 @@
 
 === Basic Interactions
 
+=== Account Actions
+
+* [ ] There is only one site administrator
+* [ ] The user may wipe his/her account, deleting every topics/posts/replies from the database
+** [ ] Optionally require moderator approval
+** [ ] If user has been a moderator, this fact would persist in the `past_moderators` table
+** [ ] Only the user himself/herself or the site administrator may wipe the account
+
+=== Soft Deletion
+
+* [ ] Topics and posts are never deleted from database, unless their authors' accounts are wiped
+
 === Authentication
 
 === Authorization
 
-=== Regular User
+=== Moderation
 
-=== Moderator
+== Experience Report
 
-=== Administrator
+=== Sea-ORM
+
+* The migrations are quite unreadable
