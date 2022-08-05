@@ -5,7 +5,7 @@ use tower_http::{
     LatencyUnit,
 };
 use tracing::*;
-use tracing_subscriber::prelude::*;
+use tracing_subscriber::{prelude::*, fmt::format::FmtSpan};
 
 pub fn init_telemetry() {
     color_eyre::install().unwrap();
@@ -13,7 +13,7 @@ pub fn init_telemetry() {
         .with(tracing_subscriber::EnvFilter::new(
             std::env::var("RUST_LOG").unwrap_or_else(|_| "info".into()),
         ))
-        .with(tracing_subscriber::fmt::layer())
+        .with(tracing_subscriber::fmt::layer().with_span_events(FmtSpan::CLOSE))
         .init();
 }
 

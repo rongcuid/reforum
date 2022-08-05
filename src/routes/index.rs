@@ -1,6 +1,11 @@
-use axum::{http::StatusCode, response::{IntoResponse, Html}};
-use maud::{html, Render};
+use axum::{
+    http::StatusCode,
+    response::{Html, IntoResponse},
+};
+use maud::html;
+use tracing::instrument;
 
+#[instrument(name = "handler")]
 pub async fn handler() -> impl IntoResponse {
     (
         StatusCode::OK,
