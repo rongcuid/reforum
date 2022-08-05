@@ -20,9 +20,7 @@ pub fn init_telemetry() {
 pub fn setup_telemetry(app: Router) -> Router {
     app.layer(
         TraceLayer::new_for_http()
-            .on_request(
-                DefaultOnRequest::new().level(Level::INFO)
-            )
+            .on_request(DefaultOnRequest::new().level(Level::INFO))
             .on_response(
                 DefaultOnResponse::new()
                     .level(Level::INFO)

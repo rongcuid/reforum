@@ -66,3 +66,6 @@ WHERE
 END;
 
 -- Delete triggers
+
+-- Some seeds
+INSERT INTO users(name) VALUES('admin');

@@ -4,5 +4,5 @@ hmac_secret = "1234567890123456789012345678901234567890123456789012345678901234"
 session_cookie_name = "reforum_session"
 
 [database]
-# connection = "sqlite::memory:"
-connection = "sqlite:./test.sqlitedb"
+connection = "sqlite::memory:"
+# connection = "sqlite:./test.sqlitedb"

@@ -67,3 +67,7 @@
 * The migrations are quite unreadable
 * The manual entity generation step is suboptimal
 ** I would prefer to generate migrations _from_ entities, not the other way around
+* The automatic generation for SQLite gives wrong types
+** `i32` instead of `i64`
+** `String` instead of `DateTimeUtc`
+** `INSERT ON CONFLICT` not supported for sqlite
