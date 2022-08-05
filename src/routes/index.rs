@@ -18,12 +18,23 @@ pub async fn handler(
     session: Session,
     Extension(db): Extension<Pool>,
 ) -> Result<Html<String>, StatusCode> {
-    let id_str = if let Some(data) = session.get() {
-        format!("user {}", data.user_id)
+    if let Some(data) = session.get() {
+        Ok(Html(
+            html! {
+                h1{"Index of Reforum"}
+                p{"Hello, "(format!("user {}", data.user_id))"!"}
+                a href="/logout" { "Logout" }
+            }
+            .0,
+        ))
     } else {
-        "Anonymous".to_owned()
-    };
-    Ok(Html(
-        html! {h1{"Index of Reforum"}p{"Hello, "(id_str)"!"}}.0,
-    ))
+        Ok(Html(
+            html! {
+                h1{"Index of Reforum"}
+                p{"Hello, Anonymous!"}
+                a href="/login" { "Login" }
+            }
+            .0,
+        ))
+    }
 }
