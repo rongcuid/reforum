@@ -1861,6 +1861,7 @@ dependencies = [
 name = "reforum"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "axum 0.5.13",
  "axum-extra",
  "base64",
