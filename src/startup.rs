@@ -17,15 +17,12 @@ use crate::routes::index;
 use crate::telemetry::{init_telemetry, setup_telemetry};
 
 #[derive(Clone)]
-pub struct HmacSecret(pub Secret<String>);
-
-#[derive(Clone)]
 pub struct SessionCookieName(pub String);
 
 pub async fn run() {
     init_telemetry();
     let configuration = get_configuration().expect("Failed to read configuration");
-    let hmac_secret = HmacSecret(Secret::new(configuration.hmac_secret));
+    let hmac_secret = cookie::Key::from(configuration.hmac_secret.as_bytes());
     let session_cookie_name = SessionCookieName(configuration.session_cookie_name);
     let addr = format!("{}:{}", configuration.listen, configuration.port)
         .parse()
@@ -47,6 +44,7 @@ pub async fn run() {
     let app = app.layer(
         ServiceBuilder::new()
             .layer(CompressionLayer::new().gzip(true).deflate(true).br(true))
+            .layer(Extension(db))
             .layer(Extension(hmac_secret))
             .layer(Extension(session_cookie_name)),
     );
