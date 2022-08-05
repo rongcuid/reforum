@@ -5,7 +5,7 @@ use axum::{
 use maud::html;
 use tracing::instrument;
 
-#[instrument(name = "handler")]
+#[instrument]
 pub async fn handler() -> impl IntoResponse {
     (
         StatusCode::OK,

@@ -5,7 +5,7 @@ use tower_http::{
     LatencyUnit,
 };
 use tracing::*;
-use tracing_subscriber::{prelude::*, fmt::format::FmtSpan};
+use tracing_subscriber::{fmt::format::FmtSpan, prelude::*};
 
 pub fn init_telemetry() {
     color_eyre::install().unwrap();

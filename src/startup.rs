@@ -5,7 +5,7 @@ use axum::{Extension, Router};
 use migration::{Migrator, MigratorTrait};
 
 use sea_orm::ConnectOptions;
-use secrecy::Secret;
+
 use tower::builder::ServiceBuilder;
 use tower_http::compression::CompressionLayer;
 use tracing::log::LevelFilter;
