@@ -18,7 +18,7 @@ pub struct SessionCookieName(pub String);
 pub async fn run() {
     init_telemetry();
     let configuration = get_configuration().expect("Failed to read configuration");
-    let hmac_secret = cookie::Key::from(configuration.hmac_secret.as_bytes());
+    let key = axum_extra::extract::cookie::Key::from(configuration.hmac_secret.as_bytes());
     let session_cookie_name = SessionCookieName(configuration.session_cookie_name);
     let addr = format!("{}:{}", configuration.listen, configuration.port)
         .parse()
@@ -49,7 +49,7 @@ pub async fn run() {
         ServiceBuilder::new()
             .layer(CompressionLayer::new().gzip(true).deflate(true).br(true))
             .layer(Extension(pool))
-            .layer(Extension(hmac_secret))
+            .layer(Extension(key))
             .layer(Extension(session_cookie_name)),
     );
 
