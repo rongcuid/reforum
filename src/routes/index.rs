@@ -9,9 +9,9 @@ use axum::{
 use maud::html;
 use nanoid::nanoid;
 use secrecy::{Secret, SecretString};
-use tracing::instrument;
+use tracing::{instrument, error};
 
-use crate::core::session::{verify_session, Session};
+use crate::core::session::{self, verify_session, Session};
 
 #[instrument(skip_all)]
 pub async fn handler(
@@ -33,6 +33,7 @@ pub async fn handler(
             ));
         }
     }
+
     Ok(Html(
         html! {
             h1{"Index of Reforum"}

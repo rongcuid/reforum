@@ -32,3 +32,4 @@ pub async fn handler(
     
     Ok((jar, Redirect::to("/")))
 }
+

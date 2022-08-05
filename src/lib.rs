@@ -4,3 +4,4 @@ pub mod routes;
 pub mod sql;
 pub mod startup;
 pub mod telemetry;
+pub mod error;

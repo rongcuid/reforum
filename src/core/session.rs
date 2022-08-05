@@ -16,7 +16,7 @@ use time::{OffsetDateTime, PrimitiveDateTime};
 use tokio::sync::Mutex;
 use tracing::{error, instrument};
 
-use crate::startup::SessionCookieName;
+use crate::{error::to_eyre, startup::SessionCookieName};
 
 #[derive(Debug)]
 pub struct Session(Option<SessionData>);
@@ -76,7 +76,7 @@ pub async fn new_session(
         Ok(())
     })
     .await
-    .unwrap()?;
+    .map_err(to_eyre)??;
     Ok(Session(Some(SessionData {
         user_id,
         session_id,
@@ -97,7 +97,7 @@ pub async fn remove_session(db: &Connection, session: &Session) -> Result<()> {
             Ok(())
         })
         .await
-        .unwrap()?;
+        .map_err(to_eyre)??;
     }
     Ok(())
 }
@@ -116,7 +116,7 @@ pub async fn verify_session(db: &Connection, session: &Session) -> Result<bool> 
             )?)
         })
         .await
-        .unwrap()
+        .map_err(to_eyre)?
     } else {
         Ok(false)
     }
