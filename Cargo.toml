@@ -16,8 +16,8 @@ eyre = "0.6"
 color-eyre = "0.6"
 thiserror = "1"
 
-entity = { path = "entity" }
-migration = { path = "migration" }
+# entity = { path = "entity" }
+# migration = { path = "migration" }
 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -35,7 +35,8 @@ tower-http = { version = "0.3", features = ["full"]}
 cookie = { version = "0.16", features = [ "secure" ] }
 async-trait = "0.1"
 
-chrono = "0.4"
+deadpool-sqlite = { version = "0.5", features = [ "rt_tokio_1",  "serde" ] }
+rusqlite_migration = "1"
 
 nanoid = "0.4"
 base64 = "0.13"
@@ -49,12 +50,34 @@ secrecy = { version = "0.8", features = ["serde"] }
 validator = "0.15"
 
 itertools = "0.10"
+time = "0.3"
 
-[dependencies.sea-orm]
-version = "^0"
-features = [ 
-    "sqlx-sqlite",
-    "runtime-tokio-rustls",
+[dependencies.rusqlite]
+version = "0.28"
+features = [
+    "array",
+    "bundled",
+    "backup",
+    "blob",
+    "modern_sqlite",
+    "collation",
+    "column_decltype",
+    "csvtab",
+    "extra_check",
+    "functions",
+    "hooks",
+    "i128_blob",
+    "limits",
+    "load_extension",
+    "serde_json",
+    "series",
+    "time",
+    "trace",
+    "unlock_notify",
+    "url",
+    "uuid",
+    "vtab",
+    "window",
 ]
 
 # [dependencies.sqlx]

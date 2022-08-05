@@ -1,14 +1,15 @@
+use std::sync::Arc;
+
 use axum::extract::{FromRequest, RequestParts};
-use entity::sessions;
+use deadpool_sqlite::Connection;
 use eyre::*;
 
 use async_trait::async_trait;
 use hyper::StatusCode;
-use migration::OnConflict;
-use sea_orm::{prelude::*, ActiveValue};
 
 use secrecy::{ExposeSecret, Secret};
 use sha2::{Digest, Sha256};
+use time::{OffsetDateTime, PrimitiveDateTime};
 use tracing::instrument;
 
 #[derive(Debug)]
@@ -38,25 +39,25 @@ where
     }
 }
 
-#[instrument]
+#[instrument(skip(db))]
 pub async fn insert_session(
-    db: &DatabaseConnection,
+    db: &Connection,
     user_id: i64,
     session_id: &Secret<String>,
-    expires_at: &Option<DateTimeUtc>,
-) -> Result<(), DbErr> {
+    expires_at: &Option<OffsetDateTime>,
+) -> Result<()> {
     let hash = Sha256::digest(session_id.expose_secret().as_bytes())
         .as_slice()
         .to_vec();
-    let new = sessions::ActiveModel {
-        id: ActiveValue::Set(hash),
-        user_id: ActiveValue::Set(user_id),
-        expires_at: ActiveValue::Set(*expires_at),
-    };
-    // TODO: on conflict rollback
-    sessions::Entity::insert(new)
-        .on_conflict(OnConflict::new().do_nothing().to_owned())
-        .exec(db)
-        .await?;
+    let expires_at = expires_at.clone();
+    db.interact(move |conn| -> Result<(), rusqlite::Error> {
+        conn.execute(
+            r"INSERT INTO user_sessions (id, session_user_id, expires_at) VALUES(?, ?, ?)",
+            (hash, user_id, expires_at),
+        )?;
+        Ok(())
+    })
+    .await
+    .map_err(|e| eyre!("insert session to DB failed: {}", e))??;
     Ok(())
 }

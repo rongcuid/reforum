@@ -2,13 +2,9 @@ use axum::handler::Handler;
 use axum::routing::get;
 use axum::{Extension, Router};
 
-use migration::{Migrator, MigratorTrait};
-
-use sea_orm::ConnectOptions;
-
+use rusqlite_migration::{Migrations, M};
 use tower::builder::ServiceBuilder;
 use tower_http::compression::CompressionLayer;
-use tracing::log::LevelFilter;
 
 use super::routes::fallback::handler_404;
 use crate::configuration::get_configuration;
@@ -28,13 +24,19 @@ pub async fn run() {
         .parse()
         .unwrap();
 
-    let mut connection_options = ConnectOptions::from(&configuration.database.connection);
-    connection_options.sqlx_logging_level(LevelFilter::Debug);
-
-    let db = sea_orm::Database::connect(connection_options)
+    let migrations = Migrations::new(vec![M::up(include_str!("sql/00-create_tables.up.sql"))
+        .down(include_str!("sql/00-create_tables.down.sql"))]);
+    let cfg = deadpool_sqlite::Config::new(configuration.database.connection);
+    let pool = cfg.create_pool(deadpool_sqlite::Runtime::Tokio1).unwrap();
+    pool.get()
+        .await
+        .unwrap()
+        .interact(move |conn| {
+            // conn.pragma_update(None, "journal_mode", &"WAL")
+            migrations.to_latest(conn).unwrap();
+        })
         .await
         .unwrap();
-    Migrator::up(&db, None).await.unwrap();
 
     // build our application with a route
     let app = Router::new()
@@ -46,7 +48,7 @@ pub async fn run() {
     let app = app.layer(
         ServiceBuilder::new()
             .layer(CompressionLayer::new().gzip(true).deflate(true).br(true))
-            .layer(Extension(db))
+            .layer(Extension(pool))
             .layer(Extension(hmac_secret))
             .layer(Extension(session_cookie_name)),
     );

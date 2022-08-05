@@ -1,3 +1,4 @@
+use deadpool_sqlite::Pool;
 use eyre::*;
 
 use axum::{
@@ -7,7 +8,6 @@ use axum::{
 };
 use maud::html;
 use nanoid::nanoid;
-use sea_orm::prelude::DateTimeUtc;
 use secrecy::{Secret, SecretString};
 use tracing::instrument;
 
@@ -16,7 +16,7 @@ use crate::core::session::{insert_session, Session};
 #[instrument]
 pub async fn handler(
     session: Session,
-    Extension(db): Extension<sea_orm::DatabaseConnection>,
+    Extension(db): Extension<Pool>,
 ) -> Result<Html<String>, StatusCode> {
     let id_str = if let Some(data) = session.get() {
         format!("user {}", data.user_id)

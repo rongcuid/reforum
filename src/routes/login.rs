@@ -1,27 +1,24 @@
 use axum::{http::StatusCode, response::IntoResponse, Extension};
+use deadpool_sqlite::{Pool, Status};
 use secrecy::SecretString;
+use time::OffsetDateTime;
 use tracing::instrument;
 
 use nanoid::nanoid;
 
 use crate::core::session::insert_session;
 
-#[instrument]
-pub async fn handler(
-    Extension(db): Extension<sea_orm::DatabaseConnection>,
-) -> Result<String, (StatusCode, String)> {
+#[instrument(skip_all)]
+pub async fn handler(Extension(db): Extension<Pool>) -> Result<String, (StatusCode, String)> {
     let id = nanoid!();
     insert_session(
-        &db,
+        &db.get().await.unwrap(),
         1,
         &SecretString::new(id.clone()),
-        &Some(chrono::offset::Utc::now()),
+        &Some(OffsetDateTime::now_utc()),
     )
     .await
-    .or(Err((
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "Insert session error".to_owned(),
-    )))?;
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(format!(
         "Stub implementation, inserting random session ID: {}",
         id
