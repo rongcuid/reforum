@@ -1,15 +1,19 @@
-use axum::{http::StatusCode, response::{IntoResponse, Redirect}, Extension};
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Redirect},
+    Extension,
+};
 use axum_extra::extract::SignedCookieJar;
 use cookie::Cookie;
 use deadpool_sqlite::Pool;
 use tracing::instrument;
 
-use crate::{core::session::{self, remove_session, Session}, startup::SessionCookieName};
+use crate::{
+    core::session::{self, remove_session, Session},
+    startup::SessionCookieName,
+};
 
-fn remove_session_from_cookie(
-    session_name: &str,
-    jar: SignedCookieJar,
-) -> SignedCookieJar {
+fn remove_session_from_cookie(session_name: &str, jar: SignedCookieJar) -> SignedCookieJar {
     jar.remove(Cookie::named(session_name.to_owned()))
 }
 
@@ -29,7 +33,6 @@ pub async fn handler(
                 "Internal Server Error".to_owned(),
             )
         })?;
-    
+
     Ok((jar, Redirect::to("/")))
 }
-

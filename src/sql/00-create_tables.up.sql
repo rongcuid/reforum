@@ -135,6 +135,6 @@ END;
 -- Delete triggers
 -- Some seeds
 INSERT INTO
-    users(username)
+    users(username, phc)
 VALUES
-    ('admin');
+    ('admin', '$argon2i$v=19$m=16,t=2,p=1$ZHdMaHdYeE1JZ3d6dmo0WQ$SWvpjaTUlShdvYL6qKARQg');

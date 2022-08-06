@@ -9,7 +9,7 @@ use axum::{
 use maud::html;
 use nanoid::nanoid;
 use secrecy::{Secret, SecretString};
-use tracing::{instrument, error};
+use tracing::{error, instrument};
 
 use crate::core::session::{self, verify_session, Session};
 

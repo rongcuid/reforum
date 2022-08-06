@@ -29,19 +29,16 @@ pub async fn run() {
         .down(include_str!("sql/00-create_tables.down.sql"))]);
     let cfg = deadpool_sqlite::Config::new(configuration.database.connection);
     let pool = cfg.create_pool(deadpool_sqlite::Runtime::Tokio1).unwrap();
-    block_on(pool.get()
-        .await
-        .unwrap()
-        .interact(move |conn| {
-            // conn.pragma_update(None, "journal_mode", &"WAL")
-            migrations.to_latest(conn).unwrap();
-        })).unwrap()
-        ;
+    block_on(pool.get().await.unwrap().interact(move |conn| {
+        // conn.pragma_update(None, "journal_mode", &"WAL")
+        migrations.to_latest(conn).unwrap();
+    }))
+    .unwrap();
 
     // build our application with a route
     let app = Router::new()
         .route("/", get(index::handler))
-        .route("/login", get(login::handler))
+        .route("/login", get(login::get_handler).post(login::post_handler))
         .route("/logout", get(logout::handler))
         .fallback(handler_404.into_service());
 

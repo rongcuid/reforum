@@ -64,7 +64,7 @@ pub async fn new_session(
     db: &Connection,
     user_id: i64,
     expires_at: &Option<OffsetDateTime>,
-) -> Result<Session> {
+) -> Result<SessionData> {
     let session_id = nanoid!();
     let hash = Sha256::digest(session_id.as_bytes()).as_slice().to_vec();
     let expires_at = expires_at.clone();
@@ -77,10 +77,10 @@ pub async fn new_session(
     })
     .await
     .map_err(to_eyre)??;
-    Ok(Session(Some(SessionData {
+    Ok(SessionData {
         user_id,
         session_id,
-    })))
+    })
 }
 
 #[instrument(skip_all)]
