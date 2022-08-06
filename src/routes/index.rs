@@ -3,15 +3,15 @@ use eyre::*;
 
 use axum::{
     http::StatusCode,
-    response::{Html, IntoResponse},
+    response::{Html},
     Extension,
 };
 use maud::html;
-use nanoid::nanoid;
-use secrecy::{Secret, SecretString};
-use tracing::{error, instrument};
 
-use crate::core::session::{self, verify_session, Session};
+
+use tracing::{instrument};
+
+use crate::core::session::{verify_session, Session};
 
 #[instrument(skip_all)]
 pub async fn handler(

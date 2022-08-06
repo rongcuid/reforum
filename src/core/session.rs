@@ -1,4 +1,4 @@
-use std::sync::Arc;
+
 
 use axum::extract::{FromRequest, RequestParts};
 use axum_extra::extract::SignedCookieJar;
@@ -9,11 +9,11 @@ use async_trait::async_trait;
 use hyper::StatusCode;
 
 use nanoid::nanoid;
-use secrecy::{ExposeSecret, Secret, SecretString};
+
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use time::{OffsetDateTime, PrimitiveDateTime};
-use tokio::sync::Mutex;
+use time::{OffsetDateTime};
+
 use tracing::{error, instrument};
 
 use crate::{error::to_eyre, startup::SessionCookieName};
@@ -67,7 +67,7 @@ pub async fn new_session(
 ) -> Result<SessionData> {
     let session_id = nanoid!();
     let hash = Sha256::digest(session_id.as_bytes()).as_slice().to_vec();
-    let expires_at = expires_at.clone();
+    let expires_at = *expires_at;
     db.interact(move |conn| -> Result<(), Error> {
         conn.execute(
             r"INSERT INTO user_sessions (id, session_user_id, expires_at) VALUES(?, ?, ?)",

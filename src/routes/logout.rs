@@ -1,6 +1,6 @@
 use axum::{
     http::StatusCode,
-    response::{IntoResponse, Redirect},
+    response::{Redirect},
     Extension,
 };
 use axum_extra::extract::SignedCookieJar;
@@ -9,7 +9,7 @@ use deadpool_sqlite::Pool;
 use tracing::instrument;
 
 use crate::{
-    core::session::{self, remove_session, Session},
+    core::session::{remove_session, Session},
     startup::SessionCookieName,
 };
 

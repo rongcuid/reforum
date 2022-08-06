@@ -1,19 +1,18 @@
 use axum::{
-    extract::Query,
     http::StatusCode,
     response::{Html, IntoResponse, Redirect},
     Extension, Form,
 };
 use axum_extra::extract::SignedCookieJar;
 use cookie::{Cookie, SameSite};
-use deadpool_sqlite::{Connection, Pool, Status};
+use deadpool_sqlite::{Connection, Pool};
 use maud::html;
-use secrecy::SecretString;
-use serde::Deserialize;
+
+
 use time::{Duration, OffsetDateTime};
 use tracing::instrument;
 
-use nanoid::nanoid;
+
 
 use crate::{
     core::{
@@ -33,7 +32,7 @@ async fn new_session_to_cookie(
     let session = new_session(conn, user_id, &expires_at)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let jar = if let Some(s) = serde_json::to_string(&session).ok() {
+    let jar = if let Ok(s) = serde_json::to_string(&session) {
         jar.add(
             Cookie::build(session_name.to_owned(), s)
                 .same_site(SameSite::Strict)
@@ -49,9 +48,7 @@ async fn new_session_to_cookie(
 
 #[instrument(skip_all)]
 pub async fn get_handler(
-    jar: SignedCookieJar,
     session: Session,
-    Extension(session_name): Extension<SessionCookieName>,
     Extension(db): Extension<Pool>,
 ) -> impl IntoResponse {
     if verify_session(&db.get().await.unwrap(), &session)
@@ -82,8 +79,6 @@ pub async fn get_handler(
         }
         .0,
     ))
-    // let jar = new_session_to_cookie(&db, &session_name.0, jar).await?;
-    // Ok((jar, Redirect::to("/")))
 }
 
 #[instrument(skip_all, fields(username=cred.username))]
