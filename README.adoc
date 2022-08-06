@@ -11,9 +11,10 @@
 == Roadmap
 
 * [ ] Version 1.0
-** [ ] Standalone authentication
-** [ ] Login/logout/sessions/registration
-** [ ] Role based authorization
+** [x] Standalone authentication
+*** [x] Login/logout/sessions
+*** [ ] Registration/change password/recovery
+** [x] Role based authorization
 ** [ ] CRUD
 * [ ] Version 1.1
 ** [ ] HTML templates

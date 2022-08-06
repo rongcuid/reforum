@@ -18,6 +18,8 @@ use tracing::{error, instrument};
 
 use crate::{error::to_eyre, startup::SessionCookieName};
 
+use super::authorization::UserRole;
+
 #[derive(Debug)]
 pub struct Session(Option<SessionData>);
 
@@ -25,12 +27,18 @@ impl Session {
     pub fn get(&self) -> Option<&SessionData> {
         self.0.as_ref()
     }
+    /// TODO!
+    pub async fn insert(&self) {}
+    pub async fn purge(&self) {}
+    pub async fn verify(&self) {}
+    pub async fn renew(&self) {}
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SessionData {
     pub user_id: i64,
     pub session_id: String,
+    pub role: UserRole,
 }
 
 #[async_trait]
@@ -77,9 +85,11 @@ pub async fn new_session(
     })
     .await
     .map_err(to_eyre)??;
+    let role = UserRole::from_db(db, user_id).await?;
     Ok(SessionData {
         user_id,
         session_id,
+        role,
     })
 }
 

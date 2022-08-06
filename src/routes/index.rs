@@ -26,7 +26,7 @@ pub async fn handler(
             return Ok(Html(
                 html! {
                     h1{"Index of Reforum"}
-                    p{"Hello, "(format!("user {}", data.user_id))"!"}
+                    p{"Hello, "(format!("user {:?}", data))"!"}
                     a href="/logout" { "Logout" }
                 }
                 .0,
