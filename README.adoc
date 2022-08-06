@@ -10,12 +10,17 @@
 
 == Roadmap
 
-* [ ] Version 1.0
+* [ ] Version 0.9
 ** [x] Standalone authentication
 *** [x] Login/logout/sessions
 *** [ ] Registration/change password/recovery
 ** [x] Role based authorization
 ** [ ] CRUD
+* [ ] Version 1.0
+** [ ] Refactor types
+** [ ] Refactor errors
+** [ ] Unit testing
+** [ ] Documentation
 * [ ] Version 1.1
 ** [ ] HTML templates
 ** [ ] I18N
