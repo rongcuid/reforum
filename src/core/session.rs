@@ -8,6 +8,7 @@ use hyper::StatusCode;
 
 use nanoid::nanoid;
 
+use rusqlite::OptionalExtension;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use time::OffsetDateTime;
@@ -149,11 +150,14 @@ pub async fn verify_session(db: &Connection, session: &Session) -> Result<bool> 
 
         let s = s.clone();
         db.interact(move |conn| {
-            Ok(conn.query_row(
-                r#"SELECT 1 FROM user_sessions WHERE id = ? AND session_user_id = ?"#,
-                (hash, s.user_id),
-                |_| Ok(true),
-            )?)
+            Ok(conn
+                .query_row(
+                    r#"SELECT 1 FROM user_sessions WHERE id = ? AND session_user_id = ?"#,
+                    (hash, s.user_id),
+                    |_| Ok(true),
+                )
+                .optional()?
+                .is_some())
         })
         .await
         .map_err(to_eyre)?

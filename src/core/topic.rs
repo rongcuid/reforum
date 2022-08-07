@@ -1,16 +1,17 @@
-use std::sync::Arc;
+
 
 use eyre::*;
 
 use deadpool_sqlite::Connection;
-use sea_query::*;
+
 use time::OffsetDateTime;
-use tokio::sync::Mutex;
+
 
 use crate::error::to_eyre;
 
-use super::{from_row::FromRow, session::Session, user::User};
+use super::{from_row::FromRow, session::Session};
 
+#[derive(Debug)]
 pub struct Topic {
     pub id: i64,
     pub author_user_id: i64,
@@ -60,13 +61,13 @@ impl Topic {
 }
 
 impl Topic {
-    pub async fn author(&self, db: &Connection, session: &Session) {
+    pub async fn author(&self, _db: &Connection, _session: &Session) {
         todo!()
     }
-    pub async fn last_updated_by(&self, db: &Connection, session: &Session) {
+    pub async fn last_updated_by(&self, _db: &Connection, _session: &Session) {
         todo!()
     }
-    pub async fn posts(&self, db: &Connection, session: &Session) {
+    pub async fn posts(&self, _db: &Connection, _session: &Session) {
         todo!()
     }
 }

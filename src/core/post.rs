@@ -20,7 +20,7 @@ pub struct Post {
 
 impl Post {
     /// Queries a topic for a certain role
-    pub async fn query(db: &Connection, session: &Session, id: i64) -> Result<Post> {
+    pub async fn query(_db: &Connection, _session: &Session, _id: i64) -> Result<Post> {
         todo!()
     }
 }
