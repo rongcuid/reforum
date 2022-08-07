@@ -10,7 +10,7 @@ use tower_http::compression::CompressionLayer;
 use super::routes::fallback::handler_404;
 use crate::configuration::get_configuration;
 
-use crate::routes::{index, login, logout};
+use crate::routes::{index, login, logout, topics};
 use crate::telemetry::{init_telemetry, setup_telemetry};
 
 #[derive(Clone)]
@@ -40,6 +40,7 @@ pub async fn run() {
         .route("/", get(index::handler))
         .route("/login", get(login::get_handler).post(login::post_handler))
         .route("/logout", get(logout::handler))
+        .route("/topics/:id", get(topics::get_handler).post(topics::post_handler))
         .fallback(handler_404.into_service());
 
     let app = app.layer(
