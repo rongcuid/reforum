@@ -14,19 +14,19 @@ use tracing::instrument;
 use crate::{
     core::{
         authentication::LoginCredential,
-        session::{new_session, remove_session, verify_session, Session},
+        session::{remove_session, verify_session, Session},
     },
     startup::SessionCookieName,
 };
 
 async fn new_session_to_cookie(
-    conn: &Connection,
+    session: &mut Session,
     session_name: &str,
     jar: SignedCookieJar,
     user_id: i64,
 ) -> Result<SignedCookieJar, (StatusCode, String)> {
     let expires_at = Some(OffsetDateTime::now_utc() + Duration::weeks(4));
-    let session = new_session(conn, user_id, &expires_at)
+    let session = session.new(user_id, &expires_at)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let jar = if let Ok(s) = serde_json::to_string(&session) {
@@ -79,7 +79,7 @@ pub async fn get_handler(session: Session, Extension(db): Extension<Pool>) -> im
 pub async fn post_handler(
     Form(cred): Form<LoginCredential>,
     jar: SignedCookieJar,
-    session: Session,
+    mut session: Session,
     Extension(session_name): Extension<SessionCookieName>,
     Extension(db): Extension<Pool>,
 ) -> Result<(SignedCookieJar, Redirect), (StatusCode, String)> {
@@ -100,7 +100,7 @@ pub async fn post_handler(
         })? {
             remove_session(&conn, &session).await.ok();
         }
-        let jar = new_session_to_cookie(&conn, &session_name.0, jar, user_id).await?;
+        let jar = new_session_to_cookie(&mut session, &session_name.0, jar, user_id).await?;
         Ok((jar, Redirect::to("/")))
     } else {
         Err((
