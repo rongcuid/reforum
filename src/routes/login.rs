@@ -12,10 +12,7 @@ use time::{Duration, OffsetDateTime};
 use tracing::instrument;
 
 use crate::{
-    core::{
-        authentication::LoginCredential,
-        session::{verify_session, Session},
-    },
+    core::{authentication::LoginCredential, session::Session},
     startup::SessionCookieName,
 };
 
@@ -46,15 +43,12 @@ async fn new_session_to_cookie(
 
 #[instrument(skip_all)]
 pub async fn get_handler(session: Session, Extension(db): Extension<Pool>) -> impl IntoResponse {
-    if verify_session(&db.get().await.unwrap(), &session)
-        .await
-        .map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Internal Server Error".to_owned(),
-            )
-        })?
-    {
+    if session.verify().await.map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Internal Server Error".to_owned(),
+        )
+    })? {
         return Err((StatusCode::FORBIDDEN, "Already logged in".to_owned()));
     }
     Ok(Html(
@@ -93,7 +87,7 @@ pub async fn post_handler(
     })?;
     if let Some(user_id) = user_id {
         // If successfully logged in but previous session is valid, clear the session
-        if verify_session(&conn, &session).await.map_err(|_| {
+        if session.verify().await.map_err(|_| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Internal Server Error".to_owned(),

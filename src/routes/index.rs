@@ -6,7 +6,7 @@ use maud::html;
 
 use tracing::instrument;
 
-use crate::core::session::{verify_session, Session};
+use crate::core::session::Session;
 
 #[instrument(skip_all)]
 pub async fn handler(
@@ -14,10 +14,7 @@ pub async fn handler(
     Extension(db): Extension<Pool>,
 ) -> Result<Html<String>, StatusCode> {
     if let Some(data) = session.get() {
-        if verify_session(&db.get().await.unwrap(), &session)
-            .await
-            .unwrap()
-        {
+        if session.verify().await.unwrap() {
             return Ok(Html(
                 html! {
                     h1{"Index of Reforum"}

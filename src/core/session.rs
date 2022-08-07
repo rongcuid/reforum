@@ -41,7 +41,7 @@ impl Session {
         expires_at: &Option<OffsetDateTime>,
     ) -> Result<SessionData> {
         let conn = self.pool.get().await?;
-        self.purge();
+        self.purge().await?;
         let session = new_session(&conn, user_id, expires_at).await?;
         self.data = Some(session.clone());
         Ok(session)
@@ -50,7 +50,14 @@ impl Session {
         let conn = self.pool.get().await?;
         remove_session(&conn, &self.data).await
     }
-    pub async fn verify(&self) {}
+    pub async fn verify(&self) -> Result<bool> {
+        if let Some(s) = self.data.as_ref() {
+            let conn = self.pool.get().await?;
+            verify_session(&conn, s).await
+        } else {
+            Ok(false)
+        }
+    }
     pub async fn renew(&self) {}
 
     pub fn user_id(&self) -> Option<i64> {
@@ -172,24 +179,22 @@ async fn remove_session(db: &Connection, session: &Option<SessionData>) -> Resul
 }
 
 #[instrument(skip_all)]
-pub async fn verify_session(db: &Connection, session: &Session) -> Result<bool> {
-    if let Some(s) = &session.data {
-        let hash = Sha256::digest(s.session_id.as_bytes()).as_slice().to_vec();
+async fn verify_session(db: &Connection, session: &SessionData) -> Result<bool> {
+    let hash = Sha256::digest(session.session_id.as_bytes())
+        .as_slice()
+        .to_vec();
 
-        let s = s.clone();
-        db.interact(move |conn| {
-            Ok(conn
-                .query_row(
-                    r#"SELECT 1 FROM user_sessions WHERE id = ? AND session_user_id = ?"#,
-                    (hash, s.user_id),
-                    |_| Ok(true),
-                )
-                .optional()?
-                .is_some())
-        })
-        .await
-        .map_err(to_eyre)?
-    } else {
-        Ok(false)
-    }
+    let s = session.clone();
+    db.interact(move |conn| {
+        Ok(conn
+            .query_row(
+                r#"SELECT 1 FROM user_sessions WHERE id = ? AND session_user_id = ?"#,
+                (hash, s.user_id),
+                |_| Ok(true),
+            )
+            .optional()?
+            .is_some())
+    })
+    .await
+    .map_err(to_eyre)?
 }
