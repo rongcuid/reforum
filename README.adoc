@@ -84,3 +84,12 @@
 ** `String` instead of `DateTimeUtc`
 ** `INSERT ON CONFLICT` not supported for sqlite
 * Sea-Query statements generally very verbose and hard to read, and I cannot set it up stand-alone with rusqlite
+
+=== SQLite
+
+* Rusqlite does not support async
+* Deadpool for pooling has some... issues
+** In-memory db is probably not shared
+** Unlike `sqlx`, there cannot be async transactions
+** `InteractError` is a bit unergonomic when working with other errors (because of `!Send`)
+* `sqlx` does not support the full functionality of SQLite (hooks, functions, etc)
