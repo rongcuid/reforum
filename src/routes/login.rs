@@ -8,11 +8,8 @@ use cookie::{Cookie, SameSite};
 use deadpool_sqlite::{Connection, Pool};
 use maud::html;
 
-
 use time::{Duration, OffsetDateTime};
 use tracing::instrument;
-
-
 
 use crate::{
     core::{
@@ -47,10 +44,7 @@ async fn new_session_to_cookie(
 }
 
 #[instrument(skip_all)]
-pub async fn get_handler(
-    session: Session,
-    Extension(db): Extension<Pool>,
-) -> impl IntoResponse {
+pub async fn get_handler(session: Session, Extension(db): Extension<Pool>) -> impl IntoResponse {
     if verify_session(&db.get().await.unwrap(), &session)
         .await
         .map_err(|_| {

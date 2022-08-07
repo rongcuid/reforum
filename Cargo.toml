@@ -82,6 +82,16 @@ features = [
     "window",
 ]
 
+[dependencies.sea-query]
+version = "^0"
+features = [
+    "derive",
+    "attr",
+    "backend-sqlite",
+    "with-time",
+    "rusqlite",
+]
+
 # [dependencies.sqlx]
 # version = "0.6"
 # features = [

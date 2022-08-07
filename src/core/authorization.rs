@@ -26,15 +26,16 @@ impl UserRole {
         if user_id == 1 {
             return Ok(Self::Admin);
         }
-        let role = conn.interact(move |conn| {
-            conn.query_row(
-                include_str!("sql/user_moderation_status_by_id.sql"),
-                [user_id],
-                Self::from_row
-            )
-        })
-        .await
-        .map_err(to_eyre)??;
+        let role = conn
+            .interact(move |conn| {
+                conn.query_row(
+                    include_str!("sql/user_moderation_status_by_id.sql"),
+                    [user_id],
+                    Self::from_row,
+                )
+            })
+            .await
+            .map_err(to_eyre)??;
         Ok(role)
     }
     fn from_row(row: &Row<'_>) -> Result<Self, rusqlite::Error> {

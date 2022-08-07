@@ -1,5 +1,3 @@
-
-
 use axum::extract::{FromRequest, RequestParts};
 use axum_extra::extract::SignedCookieJar;
 use deadpool_sqlite::Connection;
@@ -12,7 +10,7 @@ use nanoid::nanoid;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use time::{OffsetDateTime};
+use time::OffsetDateTime;
 
 use tracing::{error, instrument};
 
@@ -32,6 +30,38 @@ impl Session {
     pub async fn purge(&self) {}
     pub async fn verify(&self) {}
     pub async fn renew(&self) {}
+
+    pub fn user_id(&self) -> Option<i64> {
+        self.0.as_ref().map(|x| x.user_id)
+    }
+
+    pub fn is_anonymous(&self) -> bool {
+        self.0.is_none()
+    }
+
+    pub fn is_viewer(&self) -> bool {
+        self.get()
+            .map(|x| matches!(x.role, UserRole::Viewer))
+            .unwrap_or(false)
+    }
+
+    pub fn is_author(&self) -> bool {
+        self.get()
+            .map(|x| matches!(x.role, UserRole::Author))
+            .unwrap_or(false)
+    }
+
+    pub fn is_moderator(&self) -> bool {
+        self.get()
+            .map(|x| matches!(x.role, UserRole::Moderator))
+            .unwrap_or(false)
+    }
+
+    pub fn is_admin(&self) -> bool {
+        self.get()
+            .map(|x| matches!(x.role, UserRole::Admin))
+            .unwrap_or(false)
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

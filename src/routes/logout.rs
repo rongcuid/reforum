@@ -1,8 +1,4 @@
-use axum::{
-    http::StatusCode,
-    response::{Redirect},
-    Extension,
-};
+use axum::{http::StatusCode, response::Redirect, Extension};
 use axum_extra::extract::SignedCookieJar;
 use cookie::Cookie;
 use deadpool_sqlite::Pool;

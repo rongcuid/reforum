@@ -3,7 +3,7 @@ use eyre::*;
 use deadpool_sqlite::Connection;
 use time::OffsetDateTime;
 
-use super::{user::User, session::Session};
+use super::{session::Session, user::User};
 
 pub struct Post {
     id: i64,
@@ -25,5 +25,4 @@ impl Post {
     }
 }
 
-impl Post {
-}
+impl Post {}

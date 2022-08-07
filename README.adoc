@@ -4,9 +4,10 @@
 
 * Only one program needed (apart from Kratos), but can run multiple servers on same DB
 * Kratos serves multiple websites with unified account
-* Sea-ORM
+* [.line-through]Sea-ORM
 * Data consistency in DB
 * Sparse queries in DB
+* Optimize later
 
 == Roadmap
 
@@ -82,3 +83,4 @@
 ** `i32` instead of `i64`
 ** `String` instead of `DateTimeUtc`
 ** `INSERT ON CONFLICT` not supported for sqlite
+* Sea-Query statements generally very verbose and hard to read, and I cannot set it up stand-alone with rusqlite

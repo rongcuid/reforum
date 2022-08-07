@@ -1,15 +1,10 @@
 use deadpool_sqlite::Pool;
 use eyre::*;
 
-use axum::{
-    http::StatusCode,
-    response::{Html},
-    Extension,
-};
+use axum::{http::StatusCode, response::Html, Extension};
 use maud::html;
 
-
-use tracing::{instrument};
+use tracing::instrument;
 
 use crate::core::session::{verify_session, Session};
 

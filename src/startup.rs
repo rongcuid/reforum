@@ -40,7 +40,10 @@ pub async fn run() {
         .route("/", get(index::handler))
         .route("/login", get(login::get_handler).post(login::post_handler))
         .route("/logout", get(logout::handler))
-        .route("/topics/:id", get(topics::get_handler).post(topics::post_handler))
+        .route(
+            "/topics/:id",
+            get(topics::get_handler).post(topics::post_handler),
+        )
         .fallback(handler_404.into_service());
 
     let app = app.layer(
