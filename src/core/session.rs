@@ -1,4 +1,7 @@
-use axum::{extract::{FromRequest, RequestParts}, Extension};
+use axum::{
+    extract::{FromRequest, RequestParts},
+    Extension,
+};
 use axum_extra::extract::SignedCookieJar;
 use deadpool_sqlite::{Connection, Pool};
 use eyre::*;
@@ -20,7 +23,7 @@ use crate::{error::to_eyre, startup::SessionCookieName};
 use super::authorization::UserRole;
 
 #[derive(Debug)]
-pub struct Session{ 
+pub struct Session {
     /// Current authenticated session data
     data: Option<SessionData>,
     pool: Pool,
@@ -32,13 +35,21 @@ impl Session {
         self.data.as_ref()
     }
     /// Create and use a new session
-    pub async fn new(&mut self, user_id: i64, expires_at: &Option<OffsetDateTime>) -> Result<SessionData> {
+    pub async fn insert(
+        &mut self,
+        user_id: i64,
+        expires_at: &Option<OffsetDateTime>,
+    ) -> Result<SessionData> {
         let conn = self.pool.get().await?;
+        self.purge();
         let session = new_session(&conn, user_id, expires_at).await?;
         self.data = Some(session.clone());
         Ok(session)
     }
-    pub async fn purge(&self) {}
+    pub async fn purge(&self) -> Result<()> {
+        let conn = self.pool.get().await?;
+        remove_session(&conn, &self.data).await
+    }
     pub async fn verify(&self) {}
     pub async fn renew(&self) {}
 
@@ -108,9 +119,9 @@ where
             .map(|c| serde_json::from_str::<SessionData>(c.value()))
             .map_or(Ok(None), |r| r.map(Some))
             .unwrap_or(None);
-        Ok(Self{
+        Ok(Self {
             data: session_data,
-            pool: pool.clone()
+            pool: pool.clone(),
         })
     }
 }
@@ -142,8 +153,8 @@ async fn new_session(
 }
 
 #[instrument(skip_all)]
-pub async fn remove_session(db: &Connection, session: &Session) -> Result<()> {
-    if let Some(s) = &session.data {
+async fn remove_session(db: &Connection, session: &Option<SessionData>) -> Result<()> {
+    if let Some(s) = &session {
         let hash = Sha256::digest(s.session_id.as_bytes()).as_slice().to_vec();
 
         let s = s.clone();

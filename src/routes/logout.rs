@@ -4,10 +4,7 @@ use cookie::Cookie;
 use deadpool_sqlite::Pool;
 use tracing::instrument;
 
-use crate::{
-    core::session::{remove_session, Session},
-    startup::SessionCookieName,
-};
+use crate::{core::session::Session, startup::SessionCookieName};
 
 fn remove_session_from_cookie(session_name: &str, jar: SignedCookieJar) -> SignedCookieJar {
     jar.remove(Cookie::named(session_name.to_owned()))
@@ -21,14 +18,12 @@ pub async fn handler(
     session: Session,
 ) -> Result<(SignedCookieJar, Redirect), (StatusCode, String)> {
     let jar = remove_session_from_cookie(&session_name.0, jar);
-    remove_session(&pool.get().await.unwrap(), &session)
-        .await
-        .map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Internal Server Error".to_owned(),
-            )
-        })?;
+    session.purge().await.map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Internal Server Error".to_owned(),
+        )
+    })?;
 
     Ok((jar, Redirect::to("/")))
 }
