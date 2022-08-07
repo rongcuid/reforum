@@ -1,4 +1,7 @@
-use eyre::*;
+use axum::response::{IntoResponse, Response};
+use hyper::StatusCode;
+// use eyre::*;
+use thiserror::*;
 
 use deadpool_sqlite::Connection;
 
@@ -8,6 +11,42 @@ use time::OffsetDateTime;
 use crate::error::to_eyre;
 
 use super::{from_row::FromRow, session::Session};
+
+#[derive(Error, Debug)]
+pub enum TopicError {
+    #[error("topic `{0}` not found")]
+    NotFound(i64),
+    #[error("topic `{0}` forbidden for {1}")]
+    Forbidden(i64, String),
+    #[error("deadpool error")]
+    DeadpoolError,
+    #[error(transparent)]
+    RusqliteError(#[from] rusqlite::Error),
+    #[error(transparent)]
+    Other(#[from] std::io::Error),
+}
+
+impl IntoResponse for TopicError {
+    fn into_response(self) -> Response {
+        match self {
+            TopicError::NotFound(_) => (StatusCode::NOT_FOUND, "404 not found"),
+            TopicError::Forbidden(_, _) => (StatusCode::FORBIDDEN, "403 forbidden"),
+            TopicError::DeadpoolError => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "500 Internal Server Error",
+            ),
+            TopicError::RusqliteError(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "500 Internal Server Error",
+            ),
+            TopicError::Other(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "500 Internal Server Error",
+            ),
+        }
+        .into_response()
+    }
+}
 
 #[derive(Debug)]
 pub struct Topic {
@@ -25,7 +64,7 @@ pub struct Topic {
 
 impl Topic {
     /// Queries a topic for a certain role
-    pub async fn query(db: &Connection, session: &Session, id: i64) -> Result<Option<Topic>> {
+    pub async fn query(db: &Connection, session: &Session, id: i64) -> Result<Topic, TopicError> {
         let topic = db
             .interact(move |conn| {
                 conn.query_row(
@@ -33,13 +72,24 @@ impl Topic {
                     [id],
                     Topic::try_from_row,
                 )
-                .optional()
             })
             .await
-            .map_err(to_eyre)??;
-        Ok(topic.filter(|t| t.is_visible_to(session)))
+            .map_err(|_| TopicError::DeadpoolError)?
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => TopicError::NotFound(id),
+                e => e.into(),
+            })?;
+        if topic.is_visible_to(&session) {
+            Ok(topic)
+        } else {
+            Err(TopicError::Forbidden(id, session.cred_str()))
+        }
     }
-    pub async fn query_visibility(db: &Connection, session: &Session, id: i64) -> Result<bool> {
+    pub async fn query_visibility(
+        db: &Connection,
+        session: &Session,
+        id: i64,
+    ) -> Result<bool, TopicError> {
         if let Some((author_user_id, public, deleted_at)) = db
             .interact(move |conn| {
                 conn.query_row(
@@ -50,7 +100,7 @@ impl Topic {
                 .optional()
             })
             .await
-            .map_err(to_eyre)??
+            .map_err(|_| TopicError::DeadpoolError)??
         {
             Ok(Self::topic_is_visible_to(
                 author_user_id,
@@ -59,7 +109,7 @@ impl Topic {
                 session,
             ))
         } else {
-            Ok(false)
+            Err(TopicError::NotFound(id))
         }
     }
     fn is_visible_to(&self, session: &Session) -> bool {

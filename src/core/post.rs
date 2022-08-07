@@ -41,12 +41,6 @@ impl Post {
     }
 }
 
-impl Post {
-    pub async fn topic(&self, db: &Connection, session: &Session) -> Result<Option<Topic>> {
-        Topic::query(db, session, self.topic_id).await
-    }
-}
-
 impl FromRow for Post {
     fn try_from_row(row: &rusqlite::Row) -> Result<Self, rusqlite::Error> {
         Ok(Self {

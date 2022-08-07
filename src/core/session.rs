@@ -91,6 +91,13 @@ impl Session {
             .map(|x| matches!(x.role, UserRole::Admin))
             .unwrap_or(false)
     }
+    pub fn cred_str(&self) -> String {
+        if let Some(d) = self.get() {
+            format!("{}", d.user_id)
+        } else {
+            "Anonymous".to_owned()
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
