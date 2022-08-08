@@ -1,4 +1,4 @@
-use axum::{http::StatusCode, response::Redirect, Extension};
+use axum::{response::Redirect, Extension};
 use axum_extra::extract::SignedCookieJar;
 use cookie::Cookie;
 use tracing::instrument;

@@ -77,7 +77,6 @@ async fn new_session_to_cookie(
 #[instrument(skip_all)]
 pub async fn get_handler(
     session: Session,
-    Extension(db): Extension<Pool>,
 ) -> Result<impl IntoResponse, LoginError> {
     if session.verify().await? {
         return Err(LoginError::AlreadyLoggedIn);

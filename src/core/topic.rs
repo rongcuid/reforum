@@ -77,7 +77,7 @@ impl Topic {
                 rusqlite::Error::QueryReturnedNoRows => TopicError::NotFound(id),
                 e => e.into(),
             })?;
-        if topic.is_visible_to(&session) {
+        if topic.is_visible_to(session) {
             Ok(topic)
         } else {
             Err(TopicError::Forbidden(id, session.cred_str()))

@@ -20,7 +20,7 @@ use time::OffsetDateTime;
 
 use tracing::{error, instrument};
 
-use crate::{error::to_eyre, startup::SessionCookieName};
+use crate::{startup::SessionCookieName};
 
 use super::authorization::UserRole;
 
@@ -167,7 +167,7 @@ where
             .unwrap_or(None);
         Ok(Self {
             data: session_data,
-            pool: pool.clone(),
+            pool,
         })
     }
 }

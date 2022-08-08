@@ -3,9 +3,9 @@ use eyre::*;
 use deadpool_sqlite::Connection;
 use time::OffsetDateTime;
 
-use crate::error::to_eyre;
 
-use super::{from_row::FromRow, session::Session, topic::Topic, user::User};
+
+use super::{from_row::FromRow, session::Session};
 
 pub struct Post {
     pub id: i64,
@@ -21,7 +21,7 @@ pub struct Post {
 }
 
 impl Post {
-    pub async fn query_by_topic_id(db: &Connection, session: &Session, topic_id: i64) -> Result<Vec<Post>> {
+    pub async fn query_by_topic_id(_db: &Connection, _session: &Session, _topic_id: i64) -> Result<Vec<Post>> {
         todo!()
     }
     /// Checks visibility of post, but not the topic it belongs to

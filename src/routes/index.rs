@@ -11,7 +11,7 @@ use crate::core::session::Session;
 #[instrument(skip_all)]
 pub async fn handler(
     session: Session,
-    Extension(db): Extension<Pool>,
+    Extension(_db): Extension<Pool>,
 ) -> Result<Html<String>, StatusCode> {
     if let Some(data) = session.get() {
         if session.verify().await.unwrap() {

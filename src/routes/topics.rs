@@ -1,6 +1,6 @@
 use axum::{extract::{Path, Query}, response::IntoResponse, *};
 use deadpool_sqlite::Pool;
-use hyper::StatusCode;
+
 
 use tracing::instrument;
 
@@ -13,7 +13,7 @@ use crate::core::{
 #[instrument(skip_all,fields(id=id))]
 pub async fn get_handler(
     Path(id): Path<i64>,
-    Query(pagination): Query<Pagination>,
+    Query(_pagination): Query<Pagination>,
     session: Session,
     Extension(db): Extension<Pool>,
 ) -> Result<impl IntoResponse, TopicError> {
