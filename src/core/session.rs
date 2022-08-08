@@ -1,10 +1,12 @@
+use thiserror::*;
+
 use axum::{
     extract::{FromRequest, RequestParts},
+    response::IntoResponse,
     Extension,
 };
 use axum_extra::extract::SignedCookieJar;
 use deadpool_sqlite::{Connection, Pool};
-use eyre::*;
 
 use async_trait::async_trait;
 use hyper::StatusCode;
@@ -21,6 +23,36 @@ use tracing::{error, instrument};
 use crate::{error::to_eyre, startup::SessionCookieName};
 
 use super::authorization::UserRole;
+
+#[derive(Error, Debug)]
+pub enum SessionError {
+    #[error(transparent)]
+    InteractError(#[from] deadpool_sqlite::InteractError),
+    #[error(transparent)]
+    PoolError(#[from] deadpool_sqlite::PoolError),
+    #[error(transparent)]
+    RusqliteError(#[from] rusqlite::Error),
+    #[error(transparent)]
+    Other(#[from] eyre::Error),
+}
+
+impl IntoResponse for SessionError {
+    fn into_response(self) -> axum::response::Response {
+        match self {
+            SessionError::RusqliteError(rusqlite::Error::QueryReturnedNoRows) => {
+                (StatusCode::NOT_FOUND, "404 Not Found".to_owned())
+            }
+            e => {
+                error!("{}", e);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "500 Internal Server Error".to_owned(),
+                )
+            }
+        }
+        .into_response()
+    }
+}
 
 #[derive(Debug)]
 pub struct Session {
@@ -39,18 +71,18 @@ impl Session {
         &mut self,
         user_id: i64,
         expires_at: &Option<OffsetDateTime>,
-    ) -> Result<SessionData> {
+    ) -> Result<SessionData, SessionError> {
         let conn = self.pool.get().await?;
         self.purge().await?;
         let session = new_session(&conn, user_id, expires_at).await?;
         self.data = Some(session.clone());
         Ok(session)
     }
-    pub async fn purge(&self) -> Result<()> {
+    pub async fn purge(&self) -> Result<(), SessionError> {
         let conn = self.pool.get().await?;
         remove_session(&conn, &self.data).await
     }
-    pub async fn verify(&self) -> Result<bool> {
+    pub async fn verify(&self) -> Result<bool, SessionError> {
         if let Some(s) = self.data.as_ref() {
             let conn = self.pool.get().await?;
             verify_session(&conn, s).await
@@ -145,19 +177,18 @@ async fn new_session(
     db: &Connection,
     user_id: i64,
     expires_at: &Option<OffsetDateTime>,
-) -> Result<SessionData> {
+) -> Result<SessionData, SessionError> {
     let session_id = nanoid!();
     let hash = Sha256::digest(session_id.as_bytes()).as_slice().to_vec();
     let expires_at = *expires_at;
-    db.interact(move |conn| -> Result<(), Error> {
+    db.interact(move |conn| -> Result<(), rusqlite::Error> {
         conn.execute(
             r"INSERT INTO user_sessions (id, session_user_id, expires_at) VALUES(?, ?, ?)",
             (hash, user_id, expires_at),
         )?;
         Ok(())
     })
-    .await
-    .map_err(to_eyre)??;
+    .await??;
     let role = UserRole::from_db(db, user_id).await?;
     Ok(SessionData {
         user_id,
@@ -167,7 +198,10 @@ async fn new_session(
 }
 
 #[instrument(skip_all)]
-async fn remove_session(db: &Connection, session: &Option<SessionData>) -> Result<()> {
+async fn remove_session(
+    db: &Connection,
+    session: &Option<SessionData>,
+) -> Result<(), SessionError> {
     if let Some(s) = &session {
         let hash = Sha256::digest(s.session_id.as_bytes()).as_slice().to_vec();
 
@@ -179,14 +213,13 @@ async fn remove_session(db: &Connection, session: &Option<SessionData>) -> Resul
             )?;
             Ok(())
         })
-        .await
-        .map_err(to_eyre)??;
+        .await??;
     }
     Ok(())
 }
 
 #[instrument(skip_all)]
-async fn verify_session(db: &Connection, session: &SessionData) -> Result<bool> {
+async fn verify_session(db: &Connection, session: &SessionData) -> Result<bool, SessionError> {
     let hash = Sha256::digest(session.session_id.as_bytes())
         .as_slice()
         .to_vec();
@@ -202,6 +235,5 @@ async fn verify_session(db: &Connection, session: &SessionData) -> Result<bool> 
             .optional()?
             .is_some())
     })
-    .await
-    .map_err(to_eyre)?
+    .await?
 }

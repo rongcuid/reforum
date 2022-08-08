@@ -8,8 +8,6 @@ use deadpool_sqlite::Connection;
 use rusqlite::OptionalExtension;
 use time::OffsetDateTime;
 
-use crate::error::to_eyre;
-
 use super::{from_row::FromRow, session::Session};
 
 #[derive(Error, Debug)]

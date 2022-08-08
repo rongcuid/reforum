@@ -8,6 +8,8 @@
 * Data consistency in DB
 * Sparse queries in DB
 * Optimize later
+* N+1 query is a _feature_, not a bug. Yes, reads might give some inconsistencies, but this is a non-issue for my goal. On the other hand, each transaction is much shorter.
+* Writes are of course atomic
 
 == Roadmap
 
