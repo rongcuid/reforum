@@ -76,11 +76,38 @@
 
 == Experience Report
 
+=== Rust
+
+You need to be _really_ determined before thinking about using Rust.
+Rust language is extremely powerful.
+I'd say, excellent blend of performance, safety, and expressiveness.
+Imperative styles and functional styles are all covered.
+
+However, it comes with very high upfront cost: scaffolding the project, reserving Gigabytes of space for `target/`, preparing for minute-long Rust Analyzer checks, and a very hot CPU.
+Unless you really need that bit of performance/memory footprint, use Rust only when you plan to build something substantial, or when somebody else makes a super easy to use framework.
+I would consider this monolith forum "substantial".
+
+.Other languages
+****
+I went on to try Go too. I must say its compiles magnitudes faster. Rust is probably not going to beat this record ever, because Rust is just so complex a language.
+Yes, with procedural macros, traits, generics, and lifetime, Rust is like a supercharged mix of Lisp, ML, and C++.
+
+
+Rust's error handling seems to be much more powerful and ergonomic, but async/await cannot beat Go's in ergonomics.
+Of course, Go is _designed for_ concurrency, and Rust is not. But whatever language it is, the current Middleware architecture just looks so much like constructing Monad Transformer by hand. 
+
+Nobody can beat Haskell for dealing with Monads, and Haskell has green threads as good as Go. Honestly, the only reason I am _not_ using Haskell is that its support of cross compiling is still terrible. I have to target X86, ARM, or possibly WASM, so I need a compiler like Rust/Go which can do it.
+No, I am not compiling an entire web server on a Raspberry Pi.
+****
+
 === Sea-ORM
 
-* The migrations are quite unreadable
+* The migrations are quite unreadable.
+** Each table's definition easily takes up hundreds of lines with framework-defined identifiers everywhere
+** If you think in raw SQL it is difficult to see all relations, in _this_ migration script it is even harder, because they take up 10 times more space
+** These migrations should be generated procedurally. The `Entity` definitions are much easier to read
 * The manual entity generation step is suboptimal
-** I would prefer to generate migrations _from_ entities, not the other way around
+** Again, I would prefer to generate migrations _from_ entities, not the other way around
 * The automatic generation for SQLite gives wrong types
 ** `i32` instead of `i64`
 ** `String` instead of `DateTimeUtc`
@@ -91,7 +118,6 @@
 
 * Rusqlite does not support async
 * Deadpool for pooling has some... issues
-** In-memory db is probably not shared
 ** Unlike `sqlx`, there cannot be async transactions
 ** `InteractError` is a bit unergonomic when working with other errors (because of `!Send`)
 * `sqlx` does not support the full functionality of SQLite (hooks, functions, etc)
