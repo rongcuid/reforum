@@ -19,6 +19,9 @@
 *** [ ] Registration/change password/recovery
 ** [x] Role based authorization
 ** [ ] CRUD
+
+I will stop here, and go investigate some more tech stacks. However, if I feel like this is the best stack I've got, then I will continue with the roadmap.
+
 * [ ] Version 1.0
 ** [ ] Refactor types
 ** [ ] Refactor errors
@@ -87,6 +90,8 @@ However, it comes with very high upfront cost: scaffolding the project, reservin
 Unless you really need that bit of performance/memory footprint, use Rust only when you plan to build something substantial, or when somebody else makes a super easy to use framework.
 I would consider this monolith forum "substantial".
 
+Performance? Yeah, it is simply excellent. I am not even trying, because I am cloning stuff very liberally.
+
 .Other languages
 ****
 I went on to try Go too. I must say its compiles magnitudes faster. Rust is probably not going to beat this record ever, because Rust is just so complex a language.
@@ -98,6 +103,8 @@ Of course, Go is _designed for_ concurrency, and Rust is not. But whatever langu
 
 Nobody can beat Haskell for dealing with Monads, and Haskell has green threads as good as Go. Honestly, the only reason I am _not_ using Haskell is that its support of cross compiling is still terrible. I have to target X86, ARM, or possibly WASM, so I need a compiler like Rust/Go which can do it.
 No, I am not compiling an entire web server on a Raspberry Pi.
+
+It's not the Language. It's the Runtime.
 ****
 
 === Sea-ORM

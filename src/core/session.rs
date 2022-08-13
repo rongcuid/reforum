@@ -123,6 +123,11 @@ impl Session {
             .map(|x| matches!(x.role, UserRole::Admin))
             .unwrap_or(false)
     }
+
+    pub fn can_post(&self) -> bool {
+        self.is_author() || self.is_moderator() || self.is_admin()
+    }
+
     pub fn cred_str(&self) -> String {
         if let Some(d) = self.get() {
             format!("{}", d.user_id)

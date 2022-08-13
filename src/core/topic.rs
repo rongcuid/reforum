@@ -5,21 +5,23 @@ use thiserror::*;
 
 use deadpool_sqlite::Connection;
 
-use rusqlite::OptionalExtension;
+use rusqlite::{params, OptionalExtension};
 use time::OffsetDateTime;
 
-use super::{from_row::FromRow, session::Session};
+use super::{from_row::FromRow, post::Post, session::Session};
 
 #[derive(Error, Debug)]
 pub enum TopicError {
     #[error("topic `{0}` not found")]
     NotFound(i64),
-    #[error("topic `{0}` forbidden for {1}")]
-    Forbidden(i64, String),
+    #[error("forbidden: {0}")]
+    Forbidden(String),
     #[error("deadpool error")]
     DeadpoolError,
     #[error(transparent)]
     RusqliteError(#[from] rusqlite::Error),
+    #[error("Internal error: {0}")]
+    InternalError(String),
     #[error(transparent)]
     Other(#[from] std::io::Error),
 }
@@ -28,12 +30,16 @@ impl IntoResponse for TopicError {
     fn into_response(self) -> Response {
         match self {
             TopicError::NotFound(_) => (StatusCode::NOT_FOUND, "404 not found"),
-            TopicError::Forbidden(_, _) => (StatusCode::FORBIDDEN, "403 forbidden"),
+            TopicError::Forbidden(_) => (StatusCode::FORBIDDEN, "403 forbidden"),
             TopicError::DeadpoolError => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "500 Internal Server Error",
             ),
             TopicError::RusqliteError(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "500 Internal Server Error",
+            ),
+            TopicError::InternalError(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "500 Internal Server Error",
             ),
@@ -80,7 +86,11 @@ impl Topic {
         if topic.is_visible_to(session) {
             Ok(topic)
         } else {
-            Err(TopicError::Forbidden(id, session.cred_str()))
+            Err(TopicError::Forbidden(format!(
+                "{} cannot view topic {}",
+                id,
+                session.cred_str()
+            )))
         }
     }
     pub async fn query_visibility(
@@ -131,6 +141,55 @@ impl Topic {
             // Public post is visible to everyone
             true
         }
+    }
+}
+
+impl Topic {
+    pub async fn insert_topic(
+        db: &Connection,
+        session: &Session,
+        title: &str,
+        public: bool,
+        body: bool,
+    ) -> Result<(Self, Post), TopicError> {
+        if !session.can_post() {
+            return Err(TopicError::Forbidden(format!(
+                "`{}` cannot post topic",
+                session.cred_str()
+            )));
+        }
+        let user_id = session.user_id().ok_or(TopicError::InternalError(
+            "Session User ID failed".to_owned(),
+        ))?;
+        let title = title.to_owned();
+        let body = body.to_owned();
+        let (topic, post) = db
+            .interact(move |conn| -> Result<(Topic, Post), rusqlite::Error> {
+                let tx = conn.transaction()?;
+                let topic = tx.query_row(
+                    r#"
+                INSERT INTO topics(author_user_id, title, public)
+                VALUES (?, ?, ?)
+                RETURNING *
+                "#,
+                    params![user_id, title, public],
+                    Topic::try_from_row,
+                )?;
+                let post = tx.query_row(
+                    r#"
+                    INSERT INTO posts(topic_id, author_user_id, body, public)
+                    VALUES (?, ?, ?, ?)
+                    RETURNING *
+                    "#,
+                    params![topic.id, user_id, body, public],
+                    Post::try_from_row,
+                )?;
+                tx.commit()?;
+                Ok((topic, post))
+            })
+            .await
+            .map_err(|_| TopicError::DeadpoolError)??;
+        Ok((topic, post))
     }
 }
 
