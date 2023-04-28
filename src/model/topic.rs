@@ -1,14 +1,13 @@
 use axum::response::{IntoResponse, Response};
+use axum_sessions::extractors::ReadableSession;
+use chrono::{DateTime, Utc};
 use hyper::StatusCode;
 // use eyre::*;
 use thiserror::*;
 
-use deadpool_sqlite::Connection;
+use rusqlite::{params, Connection, OptionalExtension};
 
-use rusqlite::{params, OptionalExtension};
-use time::OffsetDateTime;
-
-use super::{from_row::FromRow, post::Post, session::Session};
+use super::{from_row::FromRow, post::Post};
 
 #[derive(Error, Debug)]
 pub enum TopicError {
@@ -16,8 +15,6 @@ pub enum TopicError {
     NotFound(i64),
     #[error("forbidden: {0}")]
     Forbidden(String),
-    #[error("deadpool error")]
-    DeadpoolError,
     #[error(transparent)]
     RusqliteError(#[from] rusqlite::Error),
     #[error("Internal error: {0}")]
@@ -52,6 +49,8 @@ impl IntoResponse for TopicError {
     }
 }
 
+type Result<T, E = TopicError> = std::result::Result<T, E>;
+
 #[derive(Debug)]
 pub struct Topic {
     pub id: i64,
@@ -59,26 +58,26 @@ pub struct Topic {
     pub title: String,
     pub number_posts: i64,
     pub public: bool,
-    pub created_at: OffsetDateTime,
-    pub updated_at: Option<OffsetDateTime>,
-    pub deleted_at: Option<OffsetDateTime>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: Option<DateTime<Utc>>,
+    pub deleted_at: Option<DateTime<Utc>>,
     pub last_updated_by: Option<i64>,
     pub views_from_users: i64,
 }
 
 impl Topic {
     /// Queries a topic for a certain role
-    pub async fn query(db: &Connection, session: &Session, id: i64) -> Result<Topic, TopicError> {
-        let topic = db
-            .interact(move |conn| {
-                conn.query_row(
-                    r#"SELECT * FROM topics WHERE id = ?"#,
-                    [id],
-                    Topic::try_from_row,
-                )
-            })
-            .await
-            .map_err(|_| TopicError::DeadpoolError)?
+    pub async fn query(
+        conn: &Connection,
+        session: &ReadableSession,
+        id: i64,
+    ) -> Result<Topic, TopicError> {
+        let topic = conn
+            .query_row(
+                r#"SELECT * FROM topics WHERE id = ?"#,
+                [id],
+                Topic::try_from_row,
+            )
             .map_err(|e| match e {
                 rusqlite::Error::QueryReturnedNoRows => TopicError::NotFound(id),
                 e => e.into(),
@@ -95,7 +94,7 @@ impl Topic {
     }
     pub async fn query_visibility(
         db: &Connection,
-        session: &Session,
+        session: &ReadableSession,
         id: i64,
     ) -> Result<bool, TopicError> {
         if let Some((author_user_id, public, deleted_at)) = db
@@ -120,14 +119,14 @@ impl Topic {
             Err(TopicError::NotFound(id))
         }
     }
-    fn is_visible_to(&self, session: &Session) -> bool {
+    fn is_visible_to(&self, session: &ReadableSession) -> bool {
         Self::topic_is_visible_to(self.author_user_id, self.public, &self.deleted_at, session)
     }
     fn topic_is_visible_to(
         author_user_id: i64,
         public: bool,
-        deleted_at: &Option<OffsetDateTime>,
-        session: &Session,
+        deleted_at: &Option<DateTime<Utc>>,
+        session: &ReadableSession,
     ) -> bool {
         if deleted_at.is_some() {
             // Deleted topic is only visible to admin and moderator
@@ -147,7 +146,7 @@ impl Topic {
 impl Topic {
     pub async fn insert_topic(
         db: &Connection,
-        session: &Session,
+        session: &ReadableSession,
         title: &str,
         public: bool,
         body: bool,
@@ -194,13 +193,13 @@ impl Topic {
 }
 
 impl Topic {
-    pub async fn author(&self, _db: &Connection, _session: &Session) {
+    pub async fn author(&self, _db: &Connection, _session: &ReadableSession) {
         todo!()
     }
-    pub async fn last_updated_by(&self, _db: &Connection, _session: &Session) {
+    pub async fn last_updated_by(&self, _db: &Connection, _session: &ReadableSession) {
         todo!()
     }
-    pub async fn posts(&self, _db: &Connection, _session: &Session) {
+    pub async fn posts(&self, _db: &Connection, _session: &ReadableSession) {
         todo!()
     }
 }

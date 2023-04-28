@@ -1,11 +1,16 @@
-use deadpool_sqlite::Connection;
-use eyre::*;
-
-use rusqlite::Row;
+use crate::configuration::SQLite3Settings;
+use chrono::{DateTime, Utc};
+use rusqlite::{Connection, Row};
 use serde::{Deserialize, Serialize};
-use time::OffsetDateTime;
+use thiserror::Error;
 
-use crate::error::to_eyre;
+#[derive(Error, Debug)]
+pub enum AuthorizationError {
+    #[error(transparent)]
+    RusqliteError(#[from] rusqlite::Error),
+}
+
+type Result<T, E = AuthorizationError> = std::result::Result<T, E>;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub enum UserRole {
@@ -22,27 +27,21 @@ pub enum UserRole {
 }
 
 impl UserRole {
-    pub async fn from_db(conn: &Connection, user_id: i64) -> Result<Self> {
+    pub fn from_db(conn: &Connection, user_id: i64) -> Result<Self> {
         if user_id == 1 {
             return Ok(Self::Admin);
         }
-        let role = conn
-            .interact(move |conn| {
-                conn.query_row(
-                    include_str!("sql/user_moderation_status_by_id.sql"),
-                    [user_id],
-                    Self::from_row,
-                )
-            })
-            .await
-            .map_err(to_eyre)??;
-        Ok(role)
+        Ok(conn.query_row(
+            include_str!("sql/user_moderation_status_by_id.sql"),
+            [user_id],
+            Self::from_row,
+        )?)
     }
     fn from_row(row: &Row<'_>) -> Result<Self, rusqlite::Error> {
-        let banned_at: Option<OffsetDateTime> = row.get("banned_at")?;
-        let muted_until: Option<OffsetDateTime> = row.get("muted_until")?;
-        let moderator_assigned_at: Option<OffsetDateTime> = row.get("moderator_assigned_at")?;
-        let now = OffsetDateTime::now_utc();
+        let banned_at: Option<DateTime<Utc>> = row.get("banned_at")?;
+        let muted_until: Option<DateTime<Utc>> = row.get("muted_until")?;
+        let moderator_assigned_at: Option<DateTime<Utc>> = row.get("moderator_assigned_at")?;
+        let now = Utc::now();
         if banned_at.map(|b| b < now) == Some(true) {
             Ok(Self::Banned)
         } else if muted_until.map(|m| now < m) == Some(true) {

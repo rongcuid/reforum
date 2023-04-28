@@ -1,11 +1,10 @@
-use eyre::*;
+use thiserror::*;
 
-use deadpool_sqlite::Connection;
-use time::OffsetDateTime;
+use axum_sessions::extractors::ReadableSession;
+use chrono::{DateTime, Utc};
+use rusqlite::Connection;
 
-
-
-use super::{from_row::FromRow, session::Session};
+use crate::model::from_row::FromRow;
 
 pub struct Post {
     pub id: i64,
@@ -14,18 +13,27 @@ pub struct Post {
     pub body: String,
     pub post_number: i64,
     pub public: bool,
-    pub created_at: OffsetDateTime,
-    pub updated_at: Option<OffsetDateTime>,
-    pub deleted_at: Option<OffsetDateTime>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: Option<DateTime<Utc>>,
+    pub deleted_at: Option<DateTime<Utc>>,
     pub last_updated_by: Option<i64>,
 }
 
+#[derive(Error, Debug)]
+pub enum PostError {}
+
+type Result<T, E = PostError> = std::result::Result<T, E>;
+
 impl Post {
-    pub async fn query_by_topic_id(_db: &Connection, _session: &Session, _topic_id: i64) -> Result<Vec<Post>> {
+    pub async fn query_by_topic_id(
+        _db: &Connection,
+        _session: &ReadableSession,
+        _topic_id: i64,
+    ) -> Result<Vec<Post>> {
         todo!()
     }
     /// Checks visibility of post, but not the topic it belongs to
-    fn is_visible_to(&self, session: &Session) -> bool {
+    fn is_visible_to(&self, session: &ReadableSession) -> bool {
         if self.deleted_at.is_some() {
             // Deleted topic is only visible to admin and moderator
             session.is_admin() || session.is_moderator()

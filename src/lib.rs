@@ -1,6 +1,7 @@
+pub mod auth;
 pub mod configuration;
-pub mod core;
 pub mod error;
+pub mod model;
 pub mod routes;
 pub mod sql;
 pub mod startup;

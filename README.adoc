@@ -2,20 +2,14 @@
 
 == Goals
 
-* Only one program needed (apart from Kratos), but can run multiple servers on same DB
-* Kratos serves multiple websites with unified account
-* [.line-through]Sea-ORM
-* Data consistency in DB
-* Sparse queries in DB
+* Single server, single program, period
 * Optimize later
-* N+1 query is a _feature_, not a bug. Yes, reads might give some inconsistencies, but this is a non-issue for my goal. On the other hand, each transaction is much shorter.
-* Writes are of course atomic
 
 == Roadmap
 
 * [ ] Version 0.9
 ** [x] Standalone authentication
-*** [x] Login/logout/sessions
+*** [ ] Login/logout/sessions
 *** [ ] Registration/change password/recovery
 ** [x] Role based authorization
 ** [ ] CRUD

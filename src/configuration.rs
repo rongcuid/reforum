@@ -2,17 +2,25 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct Settings {
-    pub hmac_secret: String,
-    pub session_cookie_name: String,
+    pub session_cookie_name: SessionCookieName,
     pub database: SQLite3Settings,
     pub listen: String,
     pub port: u16,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct SQLite3Settings {
     pub connection: String,
 }
+
+impl SQLite3Settings {
+    pub fn connect(&self) -> Result<rusqlite::Connection, rusqlite::Error> {
+        rusqlite::Connection::open(&self.connection)
+    }
+}
+
+#[derive(Deserialize, Clone)]
+pub struct SessionCookieName(pub String);
 
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     let settings = config::Config::builder()

@@ -14,7 +14,7 @@ use time::{Duration, OffsetDateTime};
 use tracing::instrument;
 
 use crate::{
-    core::{
+    auth::{
         authentication::LoginCredential,
         session::{Session, SessionError},
     },
@@ -75,9 +75,7 @@ async fn new_session_to_cookie(
 }
 
 #[instrument(skip_all)]
-pub async fn get_handler(
-    session: Session,
-) -> Result<impl IntoResponse, LoginError> {
+pub async fn get_handler(session: Session) -> Result<impl IntoResponse, LoginError> {
     if session.verify().await? {
         return Err(LoginError::AlreadyLoggedIn);
     }

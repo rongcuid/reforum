@@ -12,7 +12,6 @@ name = "reforum"
 
 
 [dependencies]
-eyre = "0.6"
 color-eyre = "0.6"
 thiserror = "1"
 
@@ -21,23 +20,24 @@ serde_json = "1"
 
 config = "0.13"
 
-axum = "0.5"
-axum-extra = { version = "0.3.6", features = [ "cookie-signed" ] }
-maud = { version = "0.23", features = [ "axum" ] }
+rand = { version = "^0.8", features = [ "min_const_gen" ] }
+
+axum = "^0.6.16"
+maud = { version = "^0.25.0", features = [ "axum" ] }
 
 hyper = "0.14"
 tokio = { version = "1", features = ["full"] }
 tower = { version = "0.4" }
-tower-http = { version = "0.3", features = ["full"]}
-cookie = { version = "0.16", features = [ "secure" ] }
+tower-http = { version = "0.4", features = ["full"]}
+#tower-cookies = { version = "0.9" }
+axum-sessions = "0.5"
 async-trait = "0.1"
 futures = { version = "0.3", features = ["executor"] }
 
-deadpool-sqlite = { version = "0.5", features = [ "rt_tokio_1",  "serde" ] }
-rusqlite_migration = "1"
+rusqlite_migration = "^1.0.2"
 
 nanoid = "0.4"
-base64 = "0.13"
+base64 = "0.21"
 sha2 = "0.10"
 hmac = { version = "0.12", features = ["std"] }
 
@@ -45,58 +45,10 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 secrecy = { version = "0.8", features = ["serde"] }
-validator = "0.15"
-argon2 = { version = "0.4", features = ["std"] }
+validator = "^0.16.0"
+argon2 = { version = "^0.5.0", features = ["std"] }
 
 itertools = "0.10"
-time = "0.3"
+chrono = "^0.4.24"
 
-[dependencies.rusqlite]
-version = "0.28"
-features = [
-    "array",
-    "bundled",
-    "backup",
-    "blob",
-    "modern_sqlite",
-    "collation",
-    "column_decltype",
-    "csvtab",
-    "extra_check",
-    "functions",
-    "hooks",
-    "i128_blob",
-    "limits",
-    "load_extension",
-    "serde_json",
-    "series",
-    "time",
-    "trace",
-    "unlock_notify",
-    "url",
-    "uuid",
-    "vtab",
-    "window",
-]
-
-# [dependencies.sea-query]
-# version = "^0"
-# features = [
-#     "derive",
-#     "attr",
-#     "backend-sqlite",
-#     "with-time",
-#     "rusqlite",
-# ]
-
-# [dependencies.sqlx]
-# version = "0.6"
-# features = [
-#     "runtime-tokio-rustls",
-#     "macros",
-#     "sqlite",
-#     "uuid",
-#     "time",
-#     "migrate",
-#     "offline",
-# ]
+rusqlite = { version = "0.29", features = ["chrono", "trace"] }

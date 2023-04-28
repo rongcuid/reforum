@@ -3,7 +3,10 @@ use axum_extra::extract::SignedCookieJar;
 use cookie::Cookie;
 use tracing::instrument;
 
-use crate::{core::session::{Session, SessionError}, startup::SessionCookieName};
+use crate::{
+    auth::session::{Session, SessionError},
+    startup::SessionCookieName,
+};
 
 fn remove_session_from_cookie(session_name: &str, jar: SignedCookieJar) -> SignedCookieJar {
     jar.remove(Cookie::named(session_name.to_owned()))
