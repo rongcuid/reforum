@@ -44,7 +44,7 @@ pub async fn run() -> color_eyre::Result<()> {
         .catch_error(fallback::handler_404);
     // run it
 
-    tracing::debug!("listening on {}", addr);
+    info!("listening on {}", addr);
     Server::new(TcpListener::bind(&addr)).run(app).await?;
     // axum::Server::bind(&addr)
     //     .serve(app.into_make_service())
