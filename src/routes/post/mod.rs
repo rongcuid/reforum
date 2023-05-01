@@ -34,10 +34,13 @@ impl ResponseError for PostError {
         Self: StdError + Send + Sync + 'static,
     {
         let body = match self {
-            PostError::Deleted => "Post deleted",
-            PostError::DbError(rusqlite::Error::QueryReturnedNoRows) => "Post not found",
-            PostError::DbError(_) => "Internal server error",
-        };
+            PostError::Deleted => html! { p { "Post deleted" } },
+            PostError::DbError(rusqlite::Error::QueryReturnedNoRows) => {
+                html! { p { "Post not found" }}
+            }
+            PostError::DbError(_) => html! { p {"Internal server error"} },
+        }
+        .0;
         Response::builder().status(self.status()).body(body)
     }
 }
