@@ -1,6 +1,6 @@
 use std::os::raw::c_int;
+use poem::{Body, EndpointExt, Request, Route};
 
-use axum::{body::Body, http::Request, Router};
 use tokio::task::JoinHandle;
 use tower_http::{
     trace::{DefaultOnRequest, DefaultOnResponse, TraceLayer},
@@ -10,7 +10,7 @@ use tracing::*;
 use tracing_subscriber::{fmt::format::FmtSpan, prelude::*};
 
 fn rusqlite_log(error_code: c_int, msg: &str) {
-    tracing::error!("SQLite Error {}: {}", error_code, msg);
+    error!("SQLite Error {}: {}", error_code, msg);
 }
 
 pub fn init_telemetry() {
@@ -24,26 +24,6 @@ pub fn init_telemetry() {
     unsafe {
         rusqlite::trace::config_log(Some(rusqlite_log)).unwrap();
     }
-}
-
-pub fn setup_telemetry(app: Router) -> Router {
-    app.layer(
-        TraceLayer::new_for_http()
-            .on_request(DefaultOnRequest::new().level(Level::INFO))
-            .on_response(
-                DefaultOnResponse::new()
-                    .level(Level::INFO)
-                    .latency_unit(LatencyUnit::Micros),
-            )
-            .make_span_with(|request: &Request<Body>| {
-                info_span!(
-                    "request",
-                    id = %nanoid::nanoid!(),
-                    method = %request.method(),
-                    uri = %request.uri(),
-                )
-            }),
-    )
 }
 
 pub fn spawn_blocking_with_tracing<F, R>(f: F) -> JoinHandle<R>

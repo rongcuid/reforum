@@ -1,12 +1,7 @@
 use crate::auth::user_role::{AuthorizationError, UserRole};
 use crate::configuration::SQLite3Settings;
 use async_trait::async_trait;
-use axum::extract::FromRequestParts;
-use axum::http::request::Parts;
-use axum::http::StatusCode;
-use axum::response::{IntoResponse, Response};
-use axum::{Extension, RequestPartsExt};
-use axum_sessions::extractors::ReadableSession;
+
 use thiserror::Error;
 
 #[derive(Error, Debug)]

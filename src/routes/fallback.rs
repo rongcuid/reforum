@@ -1,6 +1,6 @@
-use axum::response::Html;
-use axum::{http::StatusCode, response::IntoResponse};
+use poem::{handler, http::StatusCode, IntoResponse};
+use poem::error::NotFoundError;
 
-pub async fn handler_404() -> (StatusCode, &'static str) {
+pub async fn handler_404(_: NotFoundError) -> impl IntoResponse {
     (StatusCode::NOT_FOUND, "404 not found")
 }
