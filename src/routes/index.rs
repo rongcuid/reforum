@@ -10,7 +10,7 @@ use tracing::instrument;
 #[instrument(skip_all)]
 #[handler]
 pub async fn handler(session: &Session) -> Result<Html<String>, StatusCode> {
-    match session.get::<u64>("uid") {
+    match session.get::<i64>("uid") {
         Some(uid) => Ok(Html(
             html! {
                 h1{"Index of Reforum"}

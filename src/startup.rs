@@ -1,5 +1,5 @@
 use poem::listener::TcpListener;
-use poem::middleware::Tracing;
+use poem::middleware::{AddData, Tracing};
 use poem::session::{CookieConfig, CookieSession};
 use poem::web::cookie::CookieKey;
 use poem::*;
@@ -35,6 +35,7 @@ pub async fn run() -> color_eyre::Result<()> {
 
     let app = Route::new()
         .at("/", get(index::handler))
+        .at("/login", get(login::get_handler).post(login::post_handler))
         .at("/logout", get(logout::handler))
         .with(CookieSession::new(
             CookieConfig::signed(CookieKey::generate())
@@ -42,6 +43,7 @@ pub async fn run() -> color_eyre::Result<()> {
                 .max_age(Duration::from_secs(60 * 60 * 24 * 30)),
         ))
         .with(Tracing)
+        .with(AddData::new(configuration.database))
         .catch_error(fallback::handler_404);
     // run it
 

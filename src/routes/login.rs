@@ -1,25 +1,16 @@
 use thiserror::*;
 
-use axum::{
-    http::StatusCode,
-    response::{Html, IntoResponse, Redirect},
-    Extension, Form,
-};
-use axum_extra::extract::SignedCookieJar;
-use cookie::{Cookie, SameSite};
-use deadpool_sqlite::Pool;
+use poem::*;
+
 use maud::html;
+use poem::error::ResponseError;
+use poem::http::{header, StatusCode};
+use poem::session::Session;
+use poem::web::{Data, Form, Html};
 
-use time::{Duration, OffsetDateTime};
+use crate::auth::authentication::LoginCredential;
+use crate::configuration::SQLite3Settings;
 use tracing::instrument;
-
-use crate::{
-    auth::{
-        authentication::LoginCredential,
-        session::{Session, SessionError},
-    },
-    startup::SessionCookieName,
-};
 
 #[derive(Error, Debug)]
 pub enum LoginError {
@@ -27,56 +18,24 @@ pub enum LoginError {
     AlreadyLoggedIn,
     #[error("unauthorized")]
     Unauthorized,
-    #[error(transparent)]
-    SessionError(#[from] SessionError),
-    #[error(transparent)]
-    Other(#[from] eyre::Error),
+    #[error("internal")]
+    InternalError,
 }
 
-impl IntoResponse for LoginError {
-    fn into_response(self) -> axum::response::Response {
+impl ResponseError for LoginError {
+    fn status(&self) -> StatusCode {
         match self {
-            LoginError::AlreadyLoggedIn => {
-                (StatusCode::FORBIDDEN, "Already logged in").into_response()
-            }
-            LoginError::Unauthorized => {
-                (StatusCode::UNAUTHORIZED, "Incorrect username or password").into_response()
-            }
-            LoginError::SessionError(err) => err.into_response(),
-            LoginError::Other(_) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "500 Internal Server Error",
-            )
-                .into_response(),
+            LoginError::AlreadyLoggedIn => StatusCode::FORBIDDEN,
+            LoginError::Unauthorized => StatusCode::UNAUTHORIZED,
+            LoginError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }
 
-async fn new_session_to_cookie(
-    session: &mut Session,
-    session_name: &str,
-    jar: SignedCookieJar,
-    user_id: i64,
-) -> Result<SignedCookieJar, LoginError> {
-    let expires_at = Some(OffsetDateTime::now_utc() + Duration::weeks(4));
-    let session = session.insert(user_id, &expires_at).await?;
-    let jar = if let Ok(s) = serde_json::to_string(&session) {
-        jar.add(
-            Cookie::build(session_name.to_owned(), s)
-                .same_site(SameSite::Strict)
-                .secure(true)
-                .http_only(true)
-                .finish(),
-        )
-    } else {
-        jar
-    };
-    Ok(jar)
-}
-
 #[instrument(skip_all)]
-pub async fn get_handler(session: Session) -> Result<impl IntoResponse, LoginError> {
-    if session.verify().await? {
+#[handler]
+pub async fn get_handler(session: &Session) -> Result<impl IntoResponse, LoginError> {
+    if session.get::<i64>("uid").is_some() {
         return Err(LoginError::AlreadyLoggedIn);
     }
     Ok(Html(
@@ -99,22 +58,22 @@ pub async fn get_handler(session: Session) -> Result<impl IntoResponse, LoginErr
 }
 
 #[instrument(skip_all, fields(username=cred.username))]
+#[handler]
 pub async fn post_handler(
     Form(cred): Form<LoginCredential>,
-    jar: SignedCookieJar,
-    mut session: Session,
-    Extension(session_name): Extension<SessionCookieName>,
-    Extension(db): Extension<Pool>,
-) -> Result<(SignedCookieJar, Redirect), LoginError> {
-    let conn = db.get().await.unwrap();
-    let user_id = cred.validate(&conn).await?;
+    session: &Session,
+    db: Data<&SQLite3Settings>,
+) -> Result<impl IntoResponse, LoginError> {
+    let user_id = cred
+        .validate(&db)
+        .await
+        .map_err(|_| LoginError::InternalError)?;
     if let Some(user_id) = user_id {
-        // If successfully logged in but previous session is valid, clear the session
-        if session.verify().await? {
-            session.purge().await.ok();
-        }
-        let jar = new_session_to_cookie(&mut session, &session_name.0, jar, user_id).await?;
-        Ok((jar, Redirect::to("/")))
+        session.set("uid", user_id);
+        Ok(Response::builder()
+            .status(StatusCode::FOUND)
+            .header(header::LOCATION, "/")
+            .finish())
     } else {
         Err(LoginError::Unauthorized)
     }
