@@ -1,5 +1,4 @@
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
-use color_eyre::eyre::WrapErr;
 
 use crate::configuration::SQLite3Settings;
 use rusqlite::OptionalExtension;

@@ -35,6 +35,7 @@ pub async fn run() -> color_eyre::Result<()> {
 
     let app = Route::new()
         .at("/", get(index::handler))
+        .at("/logout", get(logout::handler))
         .with(CookieSession::new(
             CookieConfig::signed(CookieKey::generate())
                 .name(session_cookie_name.0)
