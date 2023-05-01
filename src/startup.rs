@@ -37,6 +37,7 @@ pub async fn run() -> color_eyre::Result<()> {
         .at("/", get(index::handler))
         .at("/login", get(login::get_handler).post(login::post_handler))
         .at("/logout", get(logout::handler))
+        .at("/post/:id", get(post::get_handler))
         .with(CookieSession::new(
             CookieConfig::signed(CookieKey::generate())
                 .name(session_cookie_name.0)

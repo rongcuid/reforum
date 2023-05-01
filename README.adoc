@@ -122,3 +122,9 @@ It's not the Language. It's the Runtime.
 ** Unlike `sqlx`, there cannot be async transactions
 ** `InteractError` is a bit unergonomic when working with other errors (because of `!Send`)
 * `sqlx` does not support the full functionality of SQLite (hooks, functions, etc)
+
+=== Axum
+
+* Overall, good on happy path
+* Until handler gives a type error
+* Compared to `poem`, custom error types is easier to work with (by implementing `IntoResponse`)

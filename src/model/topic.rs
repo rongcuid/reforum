@@ -11,7 +11,7 @@ use super::{from_row::FromRow, post::Post};
 
 #[derive(Error, Debug)]
 pub enum TopicError {
-    #[error("topic `{0}` not found")]
+    #[error("post `{0}` not found")]
     NotFound(i64),
     #[error("forbidden: {0}")]
     Forbidden(String),
@@ -66,7 +66,7 @@ pub struct Topic {
 }
 
 impl Topic {
-    /// Queries a topic for a certain role
+    /// Queries a post for a certain role
     pub async fn query(
         conn: &Connection,
         session: &ReadableSession,
@@ -86,7 +86,7 @@ impl Topic {
             Ok(topic)
         } else {
             Err(TopicError::Forbidden(format!(
-                "{} cannot view topic {}",
+                "{} cannot view post {}",
                 id,
                 session.cred_str()
             )))
@@ -129,10 +129,10 @@ impl Topic {
         session: &ReadableSession,
     ) -> bool {
         if deleted_at.is_some() {
-            // Deleted topic is only visible to admin and moderator
+            // Deleted post is only visible to admin and moderator
             session.is_admin() || session.is_moderator()
         } else if !public {
-            // Hidden post is only visible to admin, moderator, and topic author
+            // Hidden post is only visible to admin, moderator, and post author
             session.is_admin()
                 || session.is_moderator()
                 || session.user_id() == Some(author_user_id)
@@ -153,7 +153,7 @@ impl Topic {
     ) -> Result<(Self, Post), TopicError> {
         if !session.can_post() {
             return Err(TopicError::Forbidden(format!(
-                "`{}` cannot post topic",
+                "`{}` cannot post post",
                 session.cred_str()
             )));
         }

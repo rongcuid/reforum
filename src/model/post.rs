@@ -1,8 +1,8 @@
 use thiserror::*;
 
-use axum_sessions::extractors::ReadableSession;
+use crate::auth::user_role::UserRole;
 use chrono::{DateTime, Utc};
-use rusqlite::Connection;
+use rusqlite::{params, Connection};
 
 use crate::model::from_row::FromRow;
 
@@ -10,9 +10,9 @@ pub struct Post {
     pub id: i64,
     pub topic_id: i64,
     pub author_user_id: i64,
+    pub author_name: String,
     pub body: String,
     pub post_number: i64,
-    pub public: bool,
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
     pub deleted_at: Option<DateTime<Utc>>,
@@ -20,28 +20,43 @@ pub struct Post {
 }
 
 #[derive(Error, Debug)]
-pub enum PostError {}
+pub enum PostError {
+    #[error("post not found")]
+    PostNotFound,
+    #[error(transparent)]
+    DbError(#[from] rusqlite::Error),
+}
 
 type Result<T, E = PostError> = std::result::Result<T, E>;
 
 impl Post {
-    pub async fn query_by_topic_id(
-        _db: &Connection,
-        _session: &ReadableSession,
-        _topic_id: i64,
-    ) -> Result<Vec<Post>> {
-        todo!()
+    pub fn query_by_post_id(conn: &Connection, uid: Option<i64>, post_id: i64) -> Result<Post> {
+        let post = conn.query_row_and_then(
+            r#"SELECT t.* FROM posts p WHERE p.id = ?1"#,
+            params![post_id],
+            |row| -> Result<Post> {
+                let post = Post {
+                    id: row.get("id")?,
+                    topic_id: row.get("topic_id")?,
+                    author_user_id: row.get("author_user_id")?,
+                    body: row.get("body")?,
+                    post_number: row.get("post_number")?,
+                    created_at: row.get("created_at")?,
+                    updated_at: row.get("updated_at")?,
+                    deleted_at: row.get("deleted_at")?,
+                    last_updated_by: row.get("last_updated_by")?,
+                };
+                Ok(post)
+            },
+        )?;
+        // TODO: deleted post
+        Ok(Some(post))
     }
-    /// Checks visibility of post, but not the topic it belongs to
-    fn is_visible_to(&self, session: &ReadableSession) -> bool {
+    /// Checks visibility of post, but not the post it belongs to
+    fn is_visible_to(&self, role: UserRole) -> bool {
         if self.deleted_at.is_some() {
-            // Deleted topic is only visible to admin and moderator
-            session.is_admin() || session.is_moderator()
-        } else if !self.public {
-            // Hidden post is only visible to admin, moderator, and topic author
-            session.is_admin()
-                || session.is_moderator()
-                || session.user_id() == Some(self.author_user_id)
+            // Deleted post is only visible to admin and moderator
+            matches!(role, UserRole::Admin | UserRole::Moderator)
         } else {
             // Public post is visible to everyone
             true

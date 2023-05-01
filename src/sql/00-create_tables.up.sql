@@ -5,13 +5,9 @@ CREATE TABLE users(
     phc TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
+    is_moderator BOOL,
     muted_until TIMESTAMP,
     banned_at TIMESTAMP
-);
-
-CREATE TABLE moderators(
-    moderator_user_id INTEGER PRIMARY KEY NOT NULL REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    assigned_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE topics(

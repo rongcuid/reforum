@@ -28,23 +28,4 @@ pub async fn handler(session: &Session) -> Result<Html<String>, StatusCode> {
             .0,
         )),
     }
-    // if let Some(auth) = auth {
-    //     Ok(Html(
-    //         html! {
-    //             h1{"Index of Reforum"}
-    //             p{"Hello, "(format!("user {:?}", auth))"!"}
-    //             a href="/logout" { "Logout" }
-    //         }
-    //         .0,
-    //     ))
-    // } else {
-    //     Ok(Html(
-    //         html! {
-    //             h1{"Index of Reforum"}
-    //             p{"Hello, Anonymous!"}
-    //             a href="/login" { "Login" }
-    //         }
-    //         .0,
-    //     ))
-    // }
 }
