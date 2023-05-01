@@ -3,11 +3,8 @@ CREATE TABLE users(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     phc TEXT,
-    post_signature TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
-    last_seen_at TIMESTAMP,
-    last_post_at TIMESTAMP,
     muted_until TIMESTAMP,
     banned_at TIMESTAMP
 );
@@ -17,24 +14,15 @@ CREATE TABLE moderators(
     assigned_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE past_moderators(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    moderator_user_id INTEGER NOT NULL REFERENCES users(id),
-    unassigned_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    reason TEXT NOT NULL
-);
-
 CREATE TABLE topics(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     author_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     title TEXT NOT NULL,
     number_posts INTEGER NOT NULL DEFAULT 0,
-    public BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
-    last_updated_by INTEGER REFERENCES users(id) ON UPDATE CASCADE,
-    views_from_users INTEGER NOT NULL DEFAULT 0
+    last_updated_by INTEGER REFERENCES users(id) ON UPDATE CASCADE
 );
 
 CREATE TABLE posts(
@@ -43,7 +31,6 @@ CREATE TABLE posts(
     author_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     body TEXT NOT NULL,
     post_number INTEGER,
-    public BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
     deleted_at TIMESTAMP,
@@ -82,14 +69,13 @@ SET
     )
 WHERE
     rowid = NEW.rowid;
-
 UPDATE
     topics
 SET
-    number_posts = number_posts + 1
+    number_posts = number_posts + 1,
+    updated_at = CURRENT_TIMESTAMP
 WHERE
     id = NEW.topic_id;
-
 END;
 
 -- Update triggers
@@ -103,7 +89,6 @@ SET
     updated_at = CURRENT_TIMESTAMP
 WHERE
     users.id = NEW.id;
-
 END;
 
 CREATE TRIGGER tr_topics_after_update
@@ -116,7 +101,6 @@ SET
     updated_at = CURRENT_TIMESTAMP
 WHERE
     topics.id = NEW.id;
-
 END;
 
 CREATE TRIGGER tr_posts_after_update
